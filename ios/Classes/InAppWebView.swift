@@ -523,19 +523,25 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate, WKNavi
                     "request": navigationAction.request
                 ]
             }
-            
-            if navigationAction.navigationType == .linkActivated && (options?.useShouldOverrideUrlLoading)! {
+
+            if url.scheme != "http" && url.scheme != "https" && (options?.useShouldOverrideUrlLoading)! {
                 shouldOverrideUrlLoading(url: url)
                 decisionHandler(.cancel)
                 return
             }
             
-            if navigationAction.navigationType == .linkActivated || navigationAction.navigationType == .backForward {
-                currentURL = url
-                if IABController != nil {
-                    IABController!.updateUrlTextField(url: (currentURL?.absoluteString)!)
-                }
-            }
+            // if navigationAction.navigationType == .linkActivated && (options?.useShouldOverrideUrlLoading)! {
+            //     shouldOverrideUrlLoading(url: url)
+            //     decisionHandler(.cancel)
+            //     return
+            // }
+            
+            // if navigationAction.navigationType == .linkActivated || navigationAction.navigationType == .backForward {
+            //     currentURL = url
+            //     if IABController != nil {
+            //         IABController!.updateUrlTextField(url: (currentURL?.absoluteString)!)
+            //     }
+            // }
         }
         
         decisionHandler(.allow)
