@@ -249,13 +249,13 @@ public class InAppBrowserActivity extends AppCompatActivity {
   }
 
   public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if ((keyCode == KeyEvent.KEYCODE_BACK)) {
-      if (canGoBack())
-        goBack();
-      else if (options.closeOnCannotGoBack)
-        InAppBrowserFlutterPlugin.close(this, uuid, null);
-      return true;
-    }
+    // if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+    //   if (canGoBack())
+    //     goBack();
+    //   else if (options.closeOnCannotGoBack)
+    //     InAppBrowserFlutterPlugin.close(this, uuid, null);
+    //   return true;
+    // }
     return super.onKeyDown(keyCode, event);
   }
 
