@@ -115,16 +115,16 @@ public class InAppBrowserActivity extends AppCompatActivity {
     else
       progressBar.setMax(100);
 
-    actionBar.setDisplayShowTitleEnabled(!options.hideTitleBar);
-
-    if (!options.toolbarTop)
-      actionBar.hide();
-
-    if (options.toolbarTopBackgroundColor != null && !options.toolbarTopBackgroundColor.isEmpty())
-      actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(options.toolbarTopBackgroundColor)));
-
-    if (options.toolbarTopFixedTitle != null && !options.toolbarTopFixedTitle.isEmpty())
-      actionBar.setTitle(options.toolbarTopFixedTitle);
+//     actionBar.setDisplayShowTitleEnabled(!options.hideTitleBar);
+// 
+//     if (!options.toolbarTop)
+//       actionBar.hide();
+// 
+//     if (options.toolbarTopBackgroundColor != null && !options.toolbarTopBackgroundColor.isEmpty())
+//       actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(options.toolbarTopBackgroundColor)));
+// 
+//     if (options.toolbarTopFixedTitle != null && !options.toolbarTopFixedTitle.isEmpty())
+//       actionBar.setTitle(options.toolbarTopFixedTitle);
 
   }
 
@@ -144,8 +144,8 @@ public class InAppBrowserActivity extends AppCompatActivity {
 
     searchView.setQuery(webView.getUrl(), false);
 
-    if (options.toolbarTopFixedTitle.isEmpty())
-      actionBar.setTitle(webView.getTitle());
+    // if (options.toolbarTopFixedTitle.isEmpty())
+    //   actionBar.setTitle(webView.getTitle());
 
     searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
       @Override
@@ -401,21 +401,21 @@ public class InAppBrowserActivity extends AppCompatActivity {
         progressBar.setMax(100);
     }
 
-    if (newOptionsMap.get("hideTitleBar") != null && options.hideTitleBar != newOptions.hideTitleBar)
-      actionBar.setDisplayShowTitleEnabled(!newOptions.hideTitleBar);
-
-    if (newOptionsMap.get("toolbarTop") != null && options.toolbarTop != newOptions.toolbarTop) {
-      if (!newOptions.toolbarTop)
-        actionBar.hide();
-      else
-        actionBar.show();
-    }
-
-    if (newOptionsMap.get("toolbarTopBackgroundColor") != null && options.toolbarTopBackgroundColor != newOptions.toolbarTopBackgroundColor && !newOptions.toolbarTopBackgroundColor.isEmpty())
-      actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(newOptions.toolbarTopBackgroundColor)));
-
-    if (newOptionsMap.get("toolbarTopFixedTitle") != null && options.toolbarTopFixedTitle != newOptions.toolbarTopFixedTitle && !newOptions.toolbarTopFixedTitle.isEmpty())
-      actionBar.setTitle(newOptions.toolbarTopFixedTitle);
+    // if (newOptionsMap.get("hideTitleBar") != null && options.hideTitleBar != newOptions.hideTitleBar)
+    //   actionBar.setDisplayShowTitleEnabled(!newOptions.hideTitleBar);
+    // 
+    // if (newOptionsMap.get("toolbarTop") != null && options.toolbarTop != newOptions.toolbarTop) {
+    //   if (!newOptions.toolbarTop)
+    //     actionBar.hide();
+    //   else
+    //     actionBar.show();
+    // }
+    // 
+    // if (newOptionsMap.get("toolbarTopBackgroundColor") != null && options.toolbarTopBackgroundColor != newOptions.toolbarTopBackgroundColor && !newOptions.toolbarTopBackgroundColor.isEmpty())
+    //   actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(newOptions.toolbarTopBackgroundColor)));
+    // 
+    // if (newOptionsMap.get("toolbarTopFixedTitle") != null && options.toolbarTopFixedTitle != newOptions.toolbarTopFixedTitle && !newOptions.toolbarTopFixedTitle.isEmpty())
+    //   actionBar.setTitle(newOptions.toolbarTopFixedTitle);
 
     if (newOptionsMap.get("hideUrlBar") != null && options.hideUrlBar != newOptions.hideUrlBar) {
       if (newOptions.hideUrlBar)
