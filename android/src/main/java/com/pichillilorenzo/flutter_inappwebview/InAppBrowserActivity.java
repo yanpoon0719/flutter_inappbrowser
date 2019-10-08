@@ -75,6 +75,7 @@ public class InAppBrowserActivity extends AppCompatActivity {
     InAppWebViewFlutterPlugin.inAppBrowser.webViewActivities.put(uuid, this);
 
     actionBar = getSupportActionBar();
+    actionBar.hide();
 
     prepareView();
 
