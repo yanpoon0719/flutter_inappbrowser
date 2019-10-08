@@ -6,7 +6,7 @@ public class InAppWebViewOptions extends Options {
 
   static final String LOG_TAG = "InAppWebViewOptions";
 
-  public boolean useShouldOverrideUrlLoading = false;
+  public boolean useShouldOverrideUrlLoading = true;
   public boolean useOnLoadResource = false;
   public boolean clearCache = false;
   public String userAgent = "";
