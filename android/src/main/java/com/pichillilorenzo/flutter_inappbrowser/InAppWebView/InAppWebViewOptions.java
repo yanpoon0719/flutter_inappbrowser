@@ -18,11 +18,11 @@ public class InAppWebViewOptions extends Options {
   public boolean clearSessionCache = false;
   public boolean builtInZoomControls = false;
   public boolean displayZoomControls = false;
-  public boolean supportZoom = true;
+  public boolean supportZoom = false;
   public boolean databaseEnabled = false;
   public boolean domStorageEnabled = false;
   public boolean useWideViewPort = true;
-  public boolean safeBrowsingEnabled = true;
+  public boolean safeBrowsingEnabled = false;
   public boolean transparentBackground = false;
   public String mixedContentMode = "";
 }
