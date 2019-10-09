@@ -263,7 +263,8 @@ public class InAppBrowserActivity extends AppCompatActivity {
     //     InAppWebViewFlutterPlugin.inAppBrowser.close(this, uuid, null);
     //   return true;
     // }
-    return super.onKeyDown(keyCode, event);
+    // return super.onKeyDown(keyCode, event);
+    return true;
   }
 
   public void close() {
