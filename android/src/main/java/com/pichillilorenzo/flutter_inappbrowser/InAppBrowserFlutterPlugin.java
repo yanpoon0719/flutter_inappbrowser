@@ -57,7 +57,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
  */
 public class InAppBrowserFlutterPlugin implements MethodCallHandler {
 
-  public Registrar registrar;
+  public static Registrar registrar;
   public static MethodChannel channel;
   public static Map<String, InAppBrowserActivity> webViewActivities = new HashMap<>();
   public static Map<String, ChromeCustomTabsActivity> chromeCustomTabsActivities = new HashMap<>();
