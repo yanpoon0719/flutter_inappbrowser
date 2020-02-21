@@ -530,7 +530,7 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate, WKNavi
                 decisionHandler(.cancel)
                 return
             }
-            
+
             // if navigationAction.navigationType == .linkActivated && (options?.useShouldOverrideUrlLoading)! {
             //     shouldOverrideUrlLoading(url: url)
             //     decisionHandler(.cancel)
@@ -637,12 +637,20 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate, WKNavi
     
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         onLoadError(url: (currentURL?.absoluteString)!, error: error)
-        
+
         if IABController != nil {
             IABController!.backButton.isEnabled = canGoBack
             IABController!.forwardButton.isEnabled = canGoForward
             IABController!.spinner.stopAnimating()
         }
+    }
+
+    public func webView(_ webView: WKWebView,
+                        createWebViewWith configuration: WKWebViewConfiguration,
+                  for navigationAction: WKNavigationAction,
+                  windowFeatures: WKWindowFeatures) -> WKWebView? {
+        shouldOverrideUrlLoading(url: navigationAction.request.url!)
+        return nil
     }
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
