@@ -1,6 +1,6 @@
 //
 //  SafariViewController.swift
-//  flutter_inappbrowser
+//  flutter_inappwebview
 //
 //  Created by Lorenzo on 25/09/18.
 //
@@ -43,7 +43,7 @@ class SafariViewController: SFSafariViewController, SFSafariViewControllerDelega
         dismiss(animated: true)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(400), execute: {() -> Void in
-            self.tmpWindow?.windowLevel = 0.0
+            self.tmpWindow?.windowLevel = UIWindow.Level(rawValue: 0.0)
             UIApplication.shared.delegate?.window??.makeKeyAndVisible()
             
             if (self.statusDelegate != nil) {
