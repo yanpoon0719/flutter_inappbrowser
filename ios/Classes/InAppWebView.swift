@@ -1646,49 +1646,49 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate, WKNavi
         presentingViewController.present(alertController, animated: true, completion: {})
     }
 
-    public func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
-                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-
-        if (isPausedTimers) {
-            isPausedTimersCompletionHandler = completionHandler
-            return
-        }
-
-        onJsAlert(message: message, result: {(result) -> Void in
-            if result is FlutterError {
-                print((result as! FlutterError).message)
-            }
-            else if (result as? NSObject) == FlutterMethodNotImplemented {
-                self.createAlertDialog(message: message, responseMessage: nil, confirmButtonTitle: nil, completionHandler: completionHandler)
-            }
-            else {
-                let response: [String: Any]
-                var responseMessage: String?;
-                var confirmButtonTitle: String?;
-
-                if let r = result {
-                    response = r as! [String: Any]
-                    responseMessage = response["message"] as? String
-                    confirmButtonTitle = response["confirmButtonTitle"] as? String
-                    let handledByClient = response["handledByClient"] as? Bool
-                    if handledByClient != nil, handledByClient! {
-                        var action = response["action"] as? Int
-                        action = action != nil ? action : 1;
-                        switch action {
-                            case 0:
-                                completionHandler()
-                                break
-                            default:
-                                completionHandler()
-                        }
-                        return;
-                    }
-                }
-
-                self.createAlertDialog(message: message, responseMessage: responseMessage, confirmButtonTitle: confirmButtonTitle, completionHandler: completionHandler)
-            }
-        })
-    }
+//    public func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
+//                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
+//
+//        if (isPausedTimers) {
+//            isPausedTimersCompletionHandler = completionHandler
+//            return
+//        }
+//
+//        onJsAlert(message: message, result: {(result) -> Void in
+//            if result is FlutterError {
+//                print((result as! FlutterError).message)
+//            }
+//            else if (result as? NSObject) == FlutterMethodNotImplemented {
+//                self.createAlertDialog(message: message, responseMessage: nil, confirmButtonTitle: nil, completionHandler: completionHandler)
+//            }
+//            else {
+//                let response: [String: Any]
+//                var responseMessage: String?;
+//                var confirmButtonTitle: String?;
+//
+//                if let r = result {
+//                    response = r as! [String: Any]
+//                    responseMessage = response["message"] as? String
+//                    confirmButtonTitle = response["confirmButtonTitle"] as? String
+//                    let handledByClient = response["handledByClient"] as? Bool
+//                    if handledByClient != nil, handledByClient! {
+//                        var action = response["action"] as? Int
+//                        action = action != nil ? action : 1;
+//                        switch action {
+//                            case 0:
+//                                completionHandler()
+//                                break
+//                            default:
+//                                completionHandler()
+//                        }
+//                        return;
+//                    }
+//                }
+//
+//                self.createAlertDialog(message: message, responseMessage: responseMessage, confirmButtonTitle: confirmButtonTitle, completionHandler: completionHandler)
+//            }
+//        })
+//    }
 
     func createConfirmDialog(message: String?, responseMessage: String?, confirmButtonTitle: String?, cancelButtonTitle: String?, completionHandler: @escaping (Bool) -> Void) {
         let dialogMessage = responseMessage != nil && !responseMessage!.isEmpty ? responseMessage : message
