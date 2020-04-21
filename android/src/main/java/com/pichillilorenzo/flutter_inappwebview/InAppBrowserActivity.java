@@ -36,6 +36,9 @@ import java.util.Map;
 
 import io.flutter.plugin.common.MethodChannel;
 
+import android.app.ActivityManager;
+import android.content.Context;
+
 public class InAppBrowserActivity extends AppCompatActivity {
 
   static final String LOG_TAG = "InAppBrowserActivity";
@@ -89,7 +92,7 @@ public class InAppBrowserActivity extends AppCompatActivity {
         String processName = getProcessName(this);
         String packageName = this.getPackageName();
         if (!packageName.equals(processName)) {
-            WebView.setDataDirectorySuffix(processName);
+            webView.setDataDirectorySuffix(processName);
         }
     }
 
@@ -622,3 +625,4 @@ public class InAppBrowserActivity extends AppCompatActivity {
     return null;
   }
 }
+
