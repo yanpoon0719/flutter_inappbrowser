@@ -72,6 +72,8 @@ public class InAppBrowserActivity extends AppCompatActivity {
     webViewOptions.parse(optionsMap);
     webView.options = webViewOptions;
 
+    if (InAppWebViewFlutterPlugin.inAppBrowser == null || InAppWebViewFlutterPlugin.inAppBrowser.webViewActivities == null) return;
+
     InAppWebViewFlutterPlugin.inAppBrowser.webViewActivities.put(uuid, this);
 
     actionBar = getSupportActionBar();
