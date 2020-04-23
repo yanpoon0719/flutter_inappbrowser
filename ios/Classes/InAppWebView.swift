@@ -1525,6 +1525,7 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate, WKNavi
                 shouldOverrideUrlLoading(url: url, method: navigationAction.request.httpMethod, headers: navigationAction.request.allHTTPHeaderFields, isForMainFrame: isForMainFrame, navigationType: navigationAction.navigationType, result: { (result) -> Void in
                     if result is FlutterError {
                         print((result as! FlutterError).message)
+                        decisionHandler(.cancel)
                     }
                     else if (result as? NSObject) == FlutterMethodNotImplemented {
                         self.updateUrlTextFieldForIABController(navigationAction: navigationAction)
