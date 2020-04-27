@@ -594,7 +594,7 @@ public class InAppWebViewChromeClient extends WebChromeClient implements PluginR
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   @Override
   public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-    if (requestCode == FILECHOOSER_RESULTCODE && (resultCode == RESULT_OK || resultCode == RESULT_CANCELED)) {
+    if (requestCode == FILECHOOSER_RESULTCODE && (resultCode == RESULT_OK || resultCode == RESULT_CANCELED) && InAppWebViewFlutterPlugin.uploadMessageArray != null) {
       InAppWebViewFlutterPlugin.uploadMessageArray.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
     }
     return true;
