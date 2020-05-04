@@ -92,7 +92,8 @@ public class InAppBrowserActivity extends AppCompatActivity {
         String processName = getProcessName(this);
         String packageName = this.getPackageName();
         if (!packageName.equals(processName)) {
-            webView.setDataDirectorySuffix(processName);
+            // webView.setDataDirectorySuffix(processName);
+            webView.setDataDirectorySuffix("com.pichillilorenzo.flutter_inappbrowser");
         }
     }
 
