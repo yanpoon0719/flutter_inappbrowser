@@ -384,7 +384,9 @@ public class InAppBrowserActivity extends AppCompatActivity {
   }
 
   public void closeButtonClicked(MenuItem item) {
-    InAppWebViewFlutterPlugin.inAppBrowser.close(this, uuid, null);
+    if (InAppWebViewFlutterPlugin.inAppBrowser != null) {
+      InAppWebViewFlutterPlugin.inAppBrowser.close(this, uuid, null);
+    }
   }
 
   public byte[] takeScreenshot() {
