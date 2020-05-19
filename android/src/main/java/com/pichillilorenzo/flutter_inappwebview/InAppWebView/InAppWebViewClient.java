@@ -17,7 +17,6 @@ import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -25,9 +24,7 @@ import androidx.annotation.RequiresApi;
 
 import com.pichillilorenzo.flutter_inappwebview.CredentialDatabase.Credential;
 import com.pichillilorenzo.flutter_inappwebview.CredentialDatabase.CredentialDatabase;
-import com.pichillilorenzo.flutter_inappwebview.FlutterWebView;
-import com.pichillilorenzo.flutter_inappwebview.InAppBrowserActivity;
-import com.pichillilorenzo.flutter_inappwebview.InAppWebViewFlutterPlugin;
+import com.pichillilorenzo.flutter_inappwebview.InAppBrowser.InAppBrowserActivity;
 import com.pichillilorenzo.flutter_inappwebview.JavaScriptBridgeInterface;
 import com.pichillilorenzo.flutter_inappwebview.Util;
 
@@ -53,6 +50,7 @@ public class InAppWebViewClient extends WebViewClient {
   protected static final String LOG_TAG = "IABWebViewClient";
   private FlutterWebView flutterWebView;
   private InAppBrowserActivity inAppBrowserActivity;
+  public MethodChannel channel;
   private static int previousAuthRequestFailureCount = 0;
   private static List<Credential> credentialsProposed = null;
 
@@ -62,6 +60,7 @@ public class InAppWebViewClient extends WebViewClient {
       this.inAppBrowserActivity = (InAppBrowserActivity) obj;
     else if (obj instanceof FlutterWebView)
       this.flutterWebView = (FlutterWebView) obj;
+    this.channel = (this.inAppBrowserActivity != null) ? this.inAppBrowserActivity.channel : this.flutterWebView.channel;
   }
 
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -125,7 +124,7 @@ public class InAppWebViewClient extends WebViewClient {
     obj.put("androidHasGesture", hasGesture);
     obj.put("androidIsRedirect", isRedirect);
     obj.put("iosWKNavigationType", null);
-    getChannel().invokeMethod("shouldOverrideUrlLoading", obj, new MethodChannel.Result() {
+    channel.invokeMethod("shouldOverrideUrlLoading", obj, new MethodChannel.Result() {
       @Override
       public void success(Object response) {
         if (response != null) {
@@ -199,7 +198,7 @@ public class InAppWebViewClient extends WebViewClient {
     if (inAppBrowserActivity != null)
       obj.put("uuid", inAppBrowserActivity.uuid);
     obj.put("url", url);
-    getChannel().invokeMethod("onLoadStart", obj);
+    channel.invokeMethod("onLoadStart", obj);
   }
 
 
@@ -212,7 +211,7 @@ public class InAppWebViewClient extends WebViewClient {
     previousAuthRequestFailureCount = 0;
     credentialsProposed = null;
 
-    // CB-10395 InAppBrowser's WebView not storing cookies reliable to local device storage
+    // CB-10395 InAppBrowserManager's WebView not storing cookies reliable to local device storage
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       CookieManager.getInstance().flush();
     } else {
@@ -235,7 +234,7 @@ public class InAppWebViewClient extends WebViewClient {
     if (inAppBrowserActivity != null)
       obj.put("uuid", inAppBrowserActivity.uuid);
     obj.put("url", url);
-    getChannel().invokeMethod("onLoadStop", obj);
+    channel.invokeMethod("onLoadStop", obj);
   }
 
   @Override
@@ -245,7 +244,7 @@ public class InAppWebViewClient extends WebViewClient {
       obj.put("uuid", inAppBrowserActivity.uuid);
     obj.put("url", url);
     obj.put("androidIsReload", isReload);
-    getChannel().invokeMethod("onUpdateVisitedHistory", obj);
+    channel.invokeMethod("onUpdateVisitedHistory", obj);
 
     super.doUpdateVisitedHistory(view, url, isReload);
   }
@@ -264,7 +263,7 @@ public class InAppWebViewClient extends WebViewClient {
     obj.put("url", failingUrl);
     obj.put("code", errorCode);
     obj.put("message", description);
-    getChannel().invokeMethod("onLoadError", obj);
+    channel.invokeMethod("onLoadError", obj);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.M)
@@ -278,7 +277,7 @@ public class InAppWebViewClient extends WebViewClient {
       obj.put("url", request.getUrl().toString());
       obj.put("statusCode", errorResponse.getStatusCode());
       obj.put("description", errorResponse.getReasonPhrase());
-      getChannel().invokeMethod("onLoadHttpError", obj);
+      channel.invokeMethod("onLoadHttpError", obj);
     }
   }
 
@@ -316,7 +315,7 @@ public class InAppWebViewClient extends WebViewClient {
     obj.put("port", port);
     obj.put("previousFailureCount", previousAuthRequestFailureCount);
 
-    getChannel().invokeMethod("onReceivedHttpAuthRequest", obj, new MethodChannel.Result() {
+    channel.invokeMethod("onReceivedHttpAuthRequest", obj, new MethodChannel.Result() {
       @Override
       public void success(Object response) {
         if (response != null) {
@@ -461,7 +460,7 @@ public class InAppWebViewClient extends WebViewClient {
 
     Log.d(LOG_TAG, obj.toString());
 
-    getChannel().invokeMethod("onReceivedServerTrustAuthRequest", obj, new MethodChannel.Result() {
+    channel.invokeMethod("onReceivedServerTrustAuthRequest", obj, new MethodChannel.Result() {
       @Override
       public void success(Object response) {
         if (response != null) {
@@ -520,7 +519,7 @@ public class InAppWebViewClient extends WebViewClient {
     obj.put("realm", realm);
     obj.put("port", request.getPort());
 
-    getChannel().invokeMethod("onReceivedClientCertRequest", obj, new MethodChannel.Result() {
+    channel.invokeMethod("onReceivedClientCertRequest", obj, new MethodChannel.Result() {
       @Override
       public void success(Object response) {
         if (response != null) {
@@ -579,7 +578,7 @@ public class InAppWebViewClient extends WebViewClient {
     obj.put("url", request.getUrl().toString());
     obj.put("threatType", threatType);
 
-    getChannel().invokeMethod("onSafeBrowsingHit", obj, new MethodChannel.Result() {
+    channel.invokeMethod("onSafeBrowsingHit", obj, new MethodChannel.Result() {
       @Override
       public void success(Object response) {
         if (response != null) {
@@ -652,7 +651,7 @@ public class InAppWebViewClient extends WebViewClient {
 
       Util.WaitFlutterResult flutterResult;
       try {
-        flutterResult = Util.invokeMethodAndWait(getChannel(), "onLoadResourceCustomScheme", obj);
+        flutterResult = Util.invokeMethodAndWait(channel, "onLoadResourceCustomScheme", obj);
       } catch (InterruptedException e) {
         e.printStackTrace();
         Log.e(LOG_TAG, e.getMessage());
@@ -701,9 +700,4 @@ public class InAppWebViewClient extends WebViewClient {
   public void onUnhandledKeyEvent(WebView view, KeyEvent event) {
 
   }
-
-  private MethodChannel getChannel() {
-    return (inAppBrowserActivity != null) ? InAppWebViewFlutterPlugin.inAppBrowser.channel : flutterWebView.channel;
-  }
-
 }

@@ -22,9 +22,11 @@
 library flutter_inappwebview;
 
 export 'src/types.dart';
+export 'src/webview.dart';
+export 'src/in_app_webview_controller.dart';
+export 'src/headless_in_app_webview.dart';
 export 'src/in_app_webview.dart';
 export 'src/in_app_browser.dart';
-export 'src/channel_manager.dart';
 export 'src/cookie_manager.dart';
 export 'src/chrome_safari_browser.dart';
 export 'src/chrome_safari_browser.dart';

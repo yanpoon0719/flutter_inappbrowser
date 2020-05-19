@@ -28,7 +28,7 @@ class InAppWebViewOnNavigationStateChangeTestState extends WidgetTestState {
                   child: InAppWebView(
                     initialUrl: "https://flutter.dev/",
                     initialHeaders: {},
-                    initialOptions: InAppWebViewWidgetOptions(
+                    initialOptions: InAppWebViewGroupOptions(
                         crossPlatform: InAppWebViewOptions(
                             clearCache: true,
                             debuggingEnabled: true
@@ -53,7 +53,7 @@ setTimeout(function() {
 }, 100);
 """);
                     },
-                    onNavigationStateChange: (InAppWebViewController controller, String url) async {
+                    onUpdateVisitedHistory: (InAppWebViewController controller, String url, bool androidIsReload) async {
                       if (url.endsWith("second-push")) {
                         setState(() {
                           appBarTitle += " " + url;

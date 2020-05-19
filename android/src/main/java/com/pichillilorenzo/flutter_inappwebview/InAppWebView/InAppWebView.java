@@ -1,12 +1,13 @@
 package com.pichillilorenzo.flutter_inappwebview.InAppWebView;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
@@ -21,23 +22,15 @@ import android.webkit.WebBackForwardList;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
-import android.widget.ListView;
 
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AlertDialog;
 
 import com.pichillilorenzo.flutter_inappwebview.ContentBlocker.ContentBlocker;
 import com.pichillilorenzo.flutter_inappwebview.ContentBlocker.ContentBlockerAction;
 import com.pichillilorenzo.flutter_inappwebview.ContentBlocker.ContentBlockerHandler;
 import com.pichillilorenzo.flutter_inappwebview.ContentBlocker.ContentBlockerTrigger;
-import com.pichillilorenzo.flutter_inappwebview.FlutterWebView;
-import com.pichillilorenzo.flutter_inappwebview.InAppBrowserActivity;
-import com.pichillilorenzo.flutter_inappwebview.InAppWebViewFlutterPlugin;
+import com.pichillilorenzo.flutter_inappwebview.InAppBrowser.InAppBrowserActivity;
 import com.pichillilorenzo.flutter_inappwebview.JavaScriptBridgeInterface;
-import com.pichillilorenzo.flutter_inappwebview.R;
 import com.pichillilorenzo.flutter_inappwebview.Shared;
 import com.pichillilorenzo.flutter_inappwebview.Util;
 
@@ -50,7 +43,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 import okhttp3.OkHttpClient;
 
 import static com.pichillilorenzo.flutter_inappwebview.InAppWebView.PreferredContentModeOptionType.fromValue;
@@ -61,7 +53,8 @@ final public class InAppWebView extends InputAwareWebView {
 
   public InAppBrowserActivity inAppBrowserActivity;
   public FlutterWebView flutterWebView;
-  public int id;
+  public MethodChannel channel;
+  public Object id;
   public InAppWebViewClient inAppWebViewClient;
   public InAppWebViewChromeClient inAppWebViewChromeClient;
   public InAppWebViewOptions options;
@@ -526,14 +519,16 @@ final public class InAppWebView extends InputAwareWebView {
     super(context, attrs, defaultStyle);
   }
 
-  public InAppWebView(Context context, Object obj, int id, InAppWebViewOptions options, View containerView) {
+  public InAppWebView(Context context, Object obj, Object id, InAppWebViewOptions options, View containerView) {
     super(context, containerView);
     if (obj instanceof InAppBrowserActivity)
       this.inAppBrowserActivity = (InAppBrowserActivity) obj;
     else if (obj instanceof FlutterWebView)
       this.flutterWebView = (FlutterWebView) obj;
+    this.channel = (this.inAppBrowserActivity != null) ? this.inAppBrowserActivity.channel : this.flutterWebView.channel;
     this.id = id;
     this.options = options;
+    //Shared.activity.registerForContextMenu(this);
   }
 
   @Override
@@ -650,16 +645,9 @@ final public class InAppWebView extends InputAwareWebView {
     settings.setSansSerifFontFamily(options.sansSerifFontFamily);
     settings.setSerifFontFamily(options.serifFontFamily);
     settings.setStandardFontFamily(options.standardFontFamily);
-    if (options.preferredContentMode != null) {
-      switch (fromValue(options.preferredContentMode)) {
-        case DESKTOP:
-          setDesktopMode(true);
-          break;
-        case MOBILE:
-        case RECOMMENDED:
-          setDesktopMode(false);
-          break;
-      }
+    if (options.preferredContentMode != null &&
+            options.preferredContentMode == PreferredContentModeOptionType.DESKTOP.toValue()) {
+      setDesktopMode(true);
     }
     settings.setSaveFormData(options.saveFormData);
     if (options.incognito)
@@ -689,24 +677,19 @@ final public class InAppWebView extends InputAwareWebView {
         obj.put("activeMatchOrdinal", activeMatchOrdinal);
         obj.put("numberOfMatches", numberOfMatches);
         obj.put("isDoneCounting", isDoneCounting);
-        getChannel().invokeMethod("onFindResultReceived", obj);
+        channel.invokeMethod("onFindResultReceived", obj);
       }
     });
 
     setVerticalScrollBarEnabled(!options.disableVerticalScroll);
     setHorizontalScrollBarEnabled(!options.disableHorizontalScroll);
+
     setOnTouchListener(new View.OnTouchListener() {
       float m_downX;
       float m_downY;
 
       @Override
       public boolean onTouch(View v, MotionEvent event) {
-
-        if (event.getPointerCount() > 1) {
-          //Multi touch detected
-          return true;
-        }
-
         if (options.disableHorizontalScroll && options.disableVerticalScroll) {
           return (event.getAction() == MotionEvent.ACTION_MOVE);
         }
@@ -736,6 +719,31 @@ final public class InAppWebView extends InputAwareWebView {
         return false;
       }
     });
+
+    setOnLongClickListener(new OnLongClickListener() {
+      @Override
+      public boolean onLongClick(View v) {
+        HitTestResult hitTestResult = getHitTestResult();
+        Map<String, Object> hitTestResultMap = new HashMap<>();
+        hitTestResultMap.put("type", hitTestResult.getType());
+        hitTestResultMap.put("extra", hitTestResult.getExtra());
+
+        Map<String, Object> obj = new HashMap<>();
+        if (inAppBrowserActivity != null)
+          obj.put("uuid", inAppBrowserActivity.uuid);
+        obj.put("hitTestResult", hitTestResultMap);
+        channel.invokeMethod("onLongPressHitTestResult", obj);
+        return false;
+      }
+    });
+  }
+
+  private Point lastTouch;
+
+  @Override
+  public boolean onTouchEvent(MotionEvent ev)    {
+    lastTouch = new Point((int) ev.getX(), (int) ev.getY()) ;
+    return super.onTouchEvent(ev);
   }
 
   public void setIncognito(boolean enabled) {
@@ -875,7 +883,8 @@ final public class InAppWebView extends InputAwareWebView {
   }
 
   public void takeScreenshot(final MethodChannel.Result result) {
-    post(new Runnable() {
+    Handler handler = new Handler(Looper.getMainLooper());
+    handler.post(new Runnable() {
       @Override
       public void run() {
         int height = (int) (getContentHeight() * scale + 0.5);
@@ -1183,7 +1192,8 @@ final public class InAppWebView extends InputAwareWebView {
       scriptToInject = String.format(jsWrapper, jsonSourceString);
     }
     final String finalScriptToInject = scriptToInject;
-    post(new Runnable() {
+    Handler handler = new Handler(Looper.getMainLooper());
+    handler.post(new Runnable() {
       @Override
       public void run() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -1264,11 +1274,7 @@ final public class InAppWebView extends InputAwareWebView {
       obj.put("uuid", inAppBrowserActivity.uuid);
     obj.put("x", x);
     obj.put("y", y);
-    getChannel().invokeMethod("onScrollChanged", obj);
-  }
-
-  private MethodChannel getChannel() {
-    return (inAppBrowserActivity != null) ? InAppWebViewFlutterPlugin.inAppBrowser.channel : flutterWebView.channel;
+    channel.invokeMethod("onScrollChanged", obj);
   }
 
   public void startSafeBrowsing(final MethodChannel.Result result) {
@@ -1304,7 +1310,7 @@ final public class InAppWebView extends InputAwareWebView {
       if (inAppBrowserActivity != null)
         obj.put("uuid", inAppBrowserActivity.uuid);
       obj.put("url", url);
-      getChannel().invokeMethod("onDownloadStart", obj);
+      channel.invokeMethod("onDownloadStart", obj);
     }
   }
 
@@ -1345,7 +1351,69 @@ final public class InAppWebView extends InputAwareWebView {
   public Float getUpdatedScale() {
     return scale;
   }
+/*
+  @Override
+  public void onCreateContextMenu(ContextMenu menu) {
+    Log.d(LOG_TAG, getHitTestResult().getType() + "");
+    String extra = getHitTestResult().getExtra();
+    //if (getHitTestResult().getType() == 7 || getHitTestResult().getType() == 5)
+    if (extra != null)
+      Log.d(LOG_TAG, extra);
+    Log.d(LOG_TAG, "\n\nonCreateContextMenu\n\n");
 
+    for(int i = 0; i < menu.size(); i++) {
+      Log.d(LOG_TAG, menu.getItem(i).toString());
+    }
+  }
+
+  private Integer mActionMode;
+  private CustomActionModeCallback mActionModeCallback;
+
+  @Override
+  public ActionMode startActionMode(ActionMode.Callback callback, int mode) {
+    Log.d(LOG_TAG, "startActionMode");
+    ViewParent parent = getParent();
+    if (parent == null || mActionMode != null) {
+      return null;
+    }
+    mActionModeCallback = new CustomActionModeCallback();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      mActionMode = ActionMode.TYPE_FLOATING;
+      //return Shared.activity.getWindow().getDecorView().startActionMode(mActionModeCallback, mActionMode);
+      return parent.startActionModeForChild(this, mActionModeCallback, mActionMode);
+    } else {
+      return parent.startActionModeForChild(this, mActionModeCallback);
+    }
+  }
+
+  private class CustomActionModeCallback implements ActionMode.Callback {
+
+    @Override
+    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+
+      menu.add("ciao");
+
+      return true;
+    }
+
+    @Override
+    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+      return false;
+    }
+
+    @Override
+    public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+      mode.finish();
+      return true;
+    }
+
+    // Called when the user exits the action mode
+    @Override
+    public void onDestroyActionMode(ActionMode mode) {
+      clearFocus();
+    }
+  }
+*/
   @Override
   public void dispose() {
     super.dispose();

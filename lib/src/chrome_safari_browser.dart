@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'types.dart';
-import 'channel_manager.dart';
 import 'in_app_browser.dart';
 
-///ChromeSafariBrowser class.
-///
 ///This class uses native [Chrome Custom Tabs](https://developer.android.com/reference/android/support/customtabs/package-summary) on Android
 ///and [SFSafariViewController](https://developer.apple.com/documentation/safariservices/sfsafariviewcontroller) on iOS.
 ///
@@ -17,13 +14,18 @@ import 'in_app_browser.dart';
 class ChromeSafariBrowser {
   String uuid;
   InAppBrowser browserFallback;
+  Map<int, ChromeSafariBrowserMenuItem> _menuItems = new HashMap();
   bool _isOpened = false;
+  MethodChannel _channel;
+  static const MethodChannel _sharedChannel = const MethodChannel('com.pichillilorenzo/flutter_chromesafaribrowser');
 
   ///Initialize the [ChromeSafariBrowser] instance with an [InAppBrowser] fallback instance or `null`.
   ChromeSafariBrowser({bFallback}) {
     uuid = uuidGenerator.v4();
     browserFallback = bFallback;
-    ChannelManager.addListener(uuid, handleMethod);
+    this._channel =
+        MethodChannel('com.pichillilorenzo/flutter_chromesafaribrowser_$uuid');
+    this._channel.setMethodCallHandler(handleMethod);
     _isOpened = false;
   }
 
@@ -32,12 +34,18 @@ class ChromeSafariBrowser {
       case "onChromeSafariBrowserOpened":
         onOpened();
         break;
-      case "onChromeSafariBrowserLoaded":
-        onLoaded();
+      case "onChromeSafariBrowserCompletedInitialLoad":
+        onCompletedInitialLoad();
         break;
       case "onChromeSafariBrowserClosed":
         onClosed();
         this._isOpened = false;
+        break;
+      case "onChromeSafariBrowserMenuItemActionPerform":
+        String url = call.arguments["url"];
+        String title = call.arguments["title"];
+        int id = call.arguments["id"].toInt();
+        this._menuItems[id].action(url, title);
         break;
       default:
         throw UnimplementedError("Unimplemented ${call.method} method");
@@ -61,56 +69,50 @@ class ChromeSafariBrowser {
     assert(url != null && url.isNotEmpty);
     this.throwIsAlreadyOpened(message: 'Cannot open $url!');
 
-    Map<String, dynamic> optionsMap = {};
-    if (Platform.isAndroid)
-      optionsMap.addAll(options.android?.toMap() ?? {});
-    else if (Platform.isIOS)
-      optionsMap.addAll(options.ios?.toMap() ?? {});
-
-    Map<String, dynamic> optionsFallbackMap = {};
-    if (optionsFallback != null) {
-      optionsFallbackMap
-          .addAll(optionsFallback.crossPlatform?.toMap() ?? {});
-      optionsFallbackMap.addAll(optionsFallback
-              .inAppWebViewWidgetOptions?.crossPlatform
-              ?.toMap() ??
-          {});
-      if (Platform.isAndroid) {
-        optionsFallbackMap
-            .addAll(optionsFallback.android?.toMap() ?? {});
-        optionsFallbackMap.addAll(optionsFallback
-                .inAppWebViewWidgetOptions?.android
-                ?.toMap() ??
-            {});
-      } else if (Platform.isIOS) {
-        optionsFallbackMap
-            .addAll(optionsFallback.ios?.toMap() ?? {});
-        optionsFallbackMap.addAll(optionsFallback
-                .inAppWebViewWidgetOptions?.ios
-                ?.toMap() ??
-            {});
-      }
-    }
+    List<Map<String, dynamic>> menuItemList = new List();
+    _menuItems.forEach((key, value) {
+      menuItemList.add({
+        "id": value.id,
+        "label": value.label
+      });
+    });
 
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('uuid', () => uuid);
-    args.putIfAbsent('uuidFallback',
-        () => (browserFallback != null) ? browserFallback.uuid : '');
     args.putIfAbsent('url', () => url);
-    args.putIfAbsent('headers', () => headersFallback);
-    args.putIfAbsent('options', () => optionsMap);
-    args.putIfAbsent('optionsFallback', () => optionsFallbackMap);
-    args.putIfAbsent('isData', () => false);
-    args.putIfAbsent('useChromeSafariBrowser', () => true);
-    await ChannelManager.channel.invokeMethod('open', args);
+    args.putIfAbsent('options', () => options?.toMap() ?? {});
+    args.putIfAbsent('uuidFallback',
+            () => (browserFallback != null) ? browserFallback.uuid : '');
+    args.putIfAbsent('headersFallback', () => headersFallback);
+    args.putIfAbsent('optionsFallback', () => optionsFallback?.toMap() ?? {});
+    args.putIfAbsent('menuItemList', () => menuItemList);
+    await _sharedChannel.invokeMethod('open', args);
     this._isOpened = true;
+  }
+
+  ///Closes the [ChromeSafariBrowser] instance.
+  Future<void> close() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    await _channel.invokeMethod("close", args);
+  }
+
+  ///Adds a [ChromeSafariBrowserMenuItem] to the menu.
+  void addMenuItem(ChromeSafariBrowserMenuItem menuItem) {
+    this._menuItems[menuItem.id] = menuItem;
+  }
+
+  ///Adds a list of [ChromeSafariBrowserMenuItem] to the menu.
+  void addMenuItems(List<ChromeSafariBrowserMenuItem> menuItems) {
+    menuItems.forEach((menuItem) {
+      this._menuItems[menuItem.id] = menuItem;
+    });
   }
 
   ///Event fires when the [ChromeSafariBrowser] is opened.
   void onOpened() {}
 
-  ///Event fires when the [ChromeSafariBrowser] is loaded.
-  void onLoaded() {}
+  ///Event fires when the initial URL load is complete.
+  void onCompletedInitialLoad() {}
 
   ///Event fires when the [ChromeSafariBrowser] is closed.
   void onClosed() {}
@@ -135,4 +137,12 @@ class ChromeSafariBrowser {
       ]);
     }
   }
+}
+
+class ChromeSafariBrowserMenuItem {
+  int id;
+  String label;
+  final void Function(String url, String title) action;
+
+  ChromeSafariBrowserMenuItem({@required this.id, @required this.label, @required this.action});
 }

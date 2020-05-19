@@ -12,8 +12,8 @@ class MyChromeSafariBrowser extends ChromeSafariBrowser {
   }
 
   @override
-  void onLoaded() {
-    print("ChromeSafari browser loaded");
+  void onCompletedInitialLoad() {
+    print("ChromeSafari browser initial load completed");
   }
 
   @override
@@ -35,6 +35,16 @@ class _ChromeSafariBrowserExampleScreenState
     extends State<ChromeSafariBrowserExampleScreen> {
   @override
   void initState() {
+    widget.browser.addMenuItem(new ChromeSafariBrowserMenuItem(id: 1, label: 'Custom item menu 1', action: (url, title) {
+      print('Custom item menu 1 clicked!');
+      print(url);
+      print(title);
+    }));
+    widget.browser.addMenuItem(new ChromeSafariBrowserMenuItem(id: 2, label: 'Custom item menu 2', action: (url, title) {
+      print('Custom item menu 2 clicked!');
+      print(url);
+      print(title);
+    }));
     super.initState();
   }
 
@@ -52,8 +62,11 @@ class _ChromeSafariBrowserExampleScreenState
                 await widget.browser.open(
                     url: "https://flutter.dev/",
                     options: ChromeSafariBrowserClassOptions(
-                        android: AndroidChromeCustomTabsOptions(addShareButton: false),
-                        ios: IOSSafariOptions(barCollapsingEnabled: true)));
+                        android: AndroidChromeCustomTabsOptions(addDefaultShareMenuItem: false, keepAliveEnabled: true),
+                        ios: IOSSafariOptions(
+                            dismissButtonStyle: IOSSafariDismissButtonStyle.CLOSE,
+                            presentationStyle: IOSUIModalPresentationStyle.OVER_FULL_SCREEN
+                        )));
               },
               child: Text("Open Chrome Safari Browser")),
         ));

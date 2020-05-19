@@ -1,15 +1,12 @@
-import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:uuid/uuid.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
 import 'webview_options.dart';
 
 var uuidGenerator = new Uuid();
-
-typedef Future<dynamic> ListenerCallback(MethodCall call);
 
 ///This type represents a callback, added with [addJavaScriptHandler], that listens to post messages sent from JavaScript.
 ///
@@ -185,8 +182,6 @@ class ConsoleMessage {
       {this.message = "", this.messageLevel = ConsoleMessageLevel.LOG});
 }
 
-///WebHistory class.
-///
 ///This class contains a snapshot of the current back/forward list for a WebView.
 class WebHistory {
   ///List of all [WebHistoryItem]s.
@@ -198,8 +193,6 @@ class WebHistory {
   WebHistory({this.list, this.currentIndex});
 }
 
-///WebHistoryItem class.
-///
 ///A convenience class for accessing fields in an entry in the back/forward list of a WebView. Each WebHistoryItem is a snapshot of the requested history item.
 class WebHistoryItem {
   ///Original url of this history item.
@@ -221,8 +214,6 @@ class WebHistoryItem {
       {this.originalUrl, this.title, this.url, this.index, this.offset});
 }
 
-///GeolocationPermissionPromptResponse class.
-///
 ///Class used by the host application to set the Geolocation permission state for an origin during the [androidOnGeolocationPermissionsShowPrompt] event.
 class GeolocationPermissionShowPromptResponse {
   ///The origin for which permissions are set.
@@ -242,7 +233,7 @@ class GeolocationPermissionShowPromptResponse {
   }
 }
 
-///JsAlertResponseAction class used by [JsAlertResponse] class.
+///Class used by [JsAlertResponse] class.
 class JsAlertResponseAction {
   final int _value;
   const JsAlertResponseAction._internal(this._value);
@@ -256,7 +247,7 @@ class JsAlertResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///JsAlertResponse class represents the response used by the [onJsAlert] event to control a JavaScript alert dialog.
+///Class represents the response used by the [onJsAlert] event to control a JavaScript alert dialog.
 class JsAlertResponse {
   ///Message to be displayed in the window.
   String message;
@@ -286,7 +277,7 @@ class JsAlertResponse {
   }
 }
 
-///JsConfirmResponseAction class used by [JsConfirmResponse] class.
+///Class used by [JsConfirmResponse] class.
 class JsConfirmResponseAction {
   final int _value;
   const JsConfirmResponseAction._internal(this._value);
@@ -301,7 +292,7 @@ class JsConfirmResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///JsConfirmResponse class represents the response used by the [onJsConfirm] event to control a JavaScript confirm dialog.
+///Class that represents the response used by the [onJsConfirm] event to control a JavaScript confirm dialog.
 class JsConfirmResponse {
   ///Message to be displayed in the window.
   String message;
@@ -336,7 +327,7 @@ class JsConfirmResponse {
   }
 }
 
-///JsPromptResponseAction class used by [JsPromptResponse] class.
+///Class used by [JsPromptResponse] class.
 class JsPromptResponseAction {
   final int _value;
   const JsPromptResponseAction._internal(this._value);
@@ -351,7 +342,7 @@ class JsPromptResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///JsPromptResponse class represents the response used by the [onJsPrompt] event to control a JavaScript prompt dialog.
+///Class that represents the response used by the [onJsPrompt] event to control a JavaScript prompt dialog.
 class JsPromptResponse {
   ///Message to be displayed in the window.
   String message;
@@ -396,7 +387,7 @@ class JsPromptResponse {
   }
 }
 
-///SafeBrowsingThreat class represents the reason the resource was caught by Safe Browsing.
+///Class that represents the reason the resource was caught by Safe Browsing.
 class SafeBrowsingThreat {
   final int _value;
   const SafeBrowsingThreat._internal(this._value);
@@ -440,7 +431,7 @@ class SafeBrowsingThreat {
   int get hashCode => _value.hashCode;
 }
 
-///SafeBrowsingResponseAction class used by [SafeBrowsingResponse] class.
+///Class used by [SafeBrowsingResponse] class.
 class SafeBrowsingResponseAction {
   final int _value;
   const SafeBrowsingResponseAction._internal(this._value);
@@ -462,7 +453,7 @@ class SafeBrowsingResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///SafeBrowsingResponse class represents the response used by the [androidOnSafeBrowsingHit] event.
+///Class that represents the response used by the [androidOnSafeBrowsingHit] event.
 ///It is used to indicate an action to take when hitting a malicious URL.
 class SafeBrowsingResponse {
   ///If reporting is enabled, all reports will be sent according to the privacy policy referenced by [InAppWebViewController.androidGetSafeBrowsingPrivacyPolicyUrl].
@@ -480,7 +471,7 @@ class SafeBrowsingResponse {
   }
 }
 
-///HttpAuthResponseAction class used by [HttpAuthResponse] class.
+///Class used by [HttpAuthResponse] class.
 class HttpAuthResponseAction {
   final int _value;
   const HttpAuthResponseAction._internal(this._value);
@@ -502,7 +493,7 @@ class HttpAuthResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///HttpAuthResponse class represents the response used by the [onReceivedHttpAuthRequest] event.
+///Class that represents the response used by the [onReceivedHttpAuthRequest] event.
 class HttpAuthResponse {
   ///Represents the username used for the authentication if the [action] corresponds to [HttpAuthResponseAction.PROCEED]
   String username;
@@ -532,7 +523,7 @@ class HttpAuthResponse {
   }
 }
 
-///HttpAuthChallenge class represents the challenge of the [onReceivedHttpAuthRequest] event.
+///Class that represents the challenge of the [onReceivedHttpAuthRequest] event.
 ///It provides all the information about the challenge.
 class HttpAuthChallenge {
   ///A count of previous failed authentication attempts.
@@ -546,7 +537,7 @@ class HttpAuthChallenge {
       : assert(previousFailureCount != null && protectionSpace != null);
 }
 
-///ProtectionSpace class represents a protection space requiring authentication.
+///Class that represents a protection space requiring authentication.
 class ProtectionSpace {
   ///The hostname of the server.
   String host;
@@ -567,7 +558,7 @@ class ProtectionSpace {
       : assert(host != null && protocol != null);
 }
 
-///HttpAuthCredential represents the credentials of an http authentication.
+///Class that represents the credentials of an http authentication.
 ///It is used by the [HttpAuthCredentialDatabase] class.
 class HttpAuthCredential {
   ///Represents the username.
@@ -580,7 +571,7 @@ class HttpAuthCredential {
       : assert(username != null && password != null);
 }
 
-///ServerTrustAuthResponseAction class used by [ServerTrustAuthResponse] class.
+///Class used by [ServerTrustAuthResponse] class.
 class ServerTrustAuthResponseAction {
   final int _value;
   const ServerTrustAuthResponseAction._internal(this._value);
@@ -610,7 +601,7 @@ class ServerTrustAuthResponse {
   }
 }
 
-///ServerTrustChallenge class represents the challenge of the [onReceivedServerTrustAuthRequest] event.
+///Class that represents the challenge of the [onReceivedServerTrustAuthRequest] event.
 ///It provides all the information about the challenge.
 class ServerTrustChallenge {
   ///The protection space requiring authentication.
@@ -637,7 +628,7 @@ class ServerTrustChallenge {
       : assert(protectionSpace != null && error != null);
 }
 
-///ClientCertResponseAction class used by [ClientCertResponse] class.
+///Class used by [ClientCertResponse] class.
 class ClientCertResponseAction {
   final int _value;
   const ClientCertResponseAction._internal(this._value);
@@ -658,7 +649,7 @@ class ClientCertResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///ClientCertResponse class represents the response used by the [onReceivedClientCertRequest] event.
+///Class that represents the response used by the [onReceivedClientCertRequest] event.
 class ClientCertResponse {
   ///The file path of the certificate to use.
   String certificatePath;
@@ -691,7 +682,7 @@ class ClientCertResponse {
   }
 }
 
-///ClientCertChallenge class represents the challenge of the [onReceivedClientCertRequest] event.
+///Class that represents the challenge of the [onReceivedClientCertRequest] event.
 ///It provides all the information about the challenge.
 class ClientCertChallenge {
   ///The protection space requiring authentication.
@@ -701,7 +692,7 @@ class ClientCertChallenge {
       : assert(protectionSpace != null);
 }
 
-///Favicon class represents a favicon of a website. It is used by [InAppWebViewController.getFavicons] method.
+///Class that represents a favicon of a website. It is used by [InAppWebViewController.getFavicons] method.
 class Favicon {
   ///The url of the favicon image.
   String url;
@@ -723,13 +714,13 @@ class Favicon {
   }
 }
 
-///AndroidInAppWebViewCacheMode class represents an Android-specific class used to override the way the cache is used.
-class AndroidInAppWebViewCacheMode {
+///Class that represents an Android-specific class used to override the way the cache is used.
+class AndroidCacheMode {
   final int _value;
-  const AndroidInAppWebViewCacheMode._internal(this._value);
-  static AndroidInAppWebViewCacheMode fromValue(int value) {
+  const AndroidCacheMode._internal(this._value);
+  static AndroidCacheMode fromValue(int value) {
     if (value != null && value >= 0 && value <= 3)
-      return AndroidInAppWebViewCacheMode._internal(value);
+      return AndroidCacheMode._internal(value);
     return null;
   }
 
@@ -751,18 +742,18 @@ class AndroidInAppWebViewCacheMode {
 
   ///Default cache usage mode. If the navigation type doesn't impose any specific behavior,
   ///use cached resources when they are available and not expired, otherwise load resources from the network.
-  static const LOAD_DEFAULT = const AndroidInAppWebViewCacheMode._internal(-1);
+  static const LOAD_DEFAULT = const AndroidCacheMode._internal(-1);
 
   ///Use cached resources when they are available, even if they have expired. Otherwise load resources from the network.
   static const LOAD_CACHE_ELSE_NETWORK =
-      const AndroidInAppWebViewCacheMode._internal(1);
+      const AndroidCacheMode._internal(1);
 
   ///Don't use the cache, load from the network.
-  static const LOAD_NO_CACHE = const AndroidInAppWebViewCacheMode._internal(2);
+  static const LOAD_NO_CACHE = const AndroidCacheMode._internal(2);
 
   ///Don't use the network, load from the cache.
   static const LOAD_CACHE_ONLY =
-      const AndroidInAppWebViewCacheMode._internal(3);
+      const AndroidCacheMode._internal(3);
 
   bool operator ==(value) => value == _value;
 
@@ -770,15 +761,15 @@ class AndroidInAppWebViewCacheMode {
   int get hashCode => _value.hashCode;
 }
 
-///AndroidInAppWebViewModeMenuItem class represents an Android-specific class used to disable the action mode menu items.
+///Class that represents an Android-specific class used to disable the action mode menu items.
 ///
 ///**NOTE**: available on Android 24+.
-class AndroidInAppWebViewModeMenuItem {
+class AndroidActionModeMenuItem {
   final int _value;
-  const AndroidInAppWebViewModeMenuItem._internal(this._value);
-  static AndroidInAppWebViewModeMenuItem fromValue(int value) {
+  const AndroidActionModeMenuItem._internal(this._value);
+  static AndroidActionModeMenuItem fromValue(int value) {
     if (value != null && value != 3 && value >= 0 && value <= 4)
-      return AndroidInAppWebViewModeMenuItem._internal(value);
+      return AndroidActionModeMenuItem._internal(value);
     return null;
   }
 
@@ -800,19 +791,19 @@ class AndroidInAppWebViewModeMenuItem {
 
   ///No menu items should be disabled.
   static const MENU_ITEM_NONE =
-      const AndroidInAppWebViewModeMenuItem._internal(0);
+      const AndroidActionModeMenuItem._internal(0);
 
   ///Disable menu item "Share".
   static const MENU_ITEM_SHARE =
-      const AndroidInAppWebViewModeMenuItem._internal(1);
+      const AndroidActionModeMenuItem._internal(1);
 
   ///Disable menu item "Web Search".
   static const MENU_ITEM_WEB_SEARCH =
-      const AndroidInAppWebViewModeMenuItem._internal(2);
+      const AndroidActionModeMenuItem._internal(2);
 
   ///Disable all the action mode menu items for text processing.
   static const MENU_ITEM_PROCESS_TEXT =
-      const AndroidInAppWebViewModeMenuItem._internal(4);
+      const AndroidActionModeMenuItem._internal(4);
 
   bool operator ==(value) => value == _value;
 
@@ -820,15 +811,15 @@ class AndroidInAppWebViewModeMenuItem {
   int get hashCode => _value.hashCode;
 }
 
-///AndroidInAppWebViewForceDark class represents an Android-specific class used to indicate the force dark mode.
+///Class that represents an Android-specific class used to indicate the force dark mode.
 ///
 ///**NOTE**: available on Android 29+.
-class AndroidInAppWebViewForceDark {
+class AndroidForceDark {
   final int _value;
-  const AndroidInAppWebViewForceDark._internal(this._value);
-  static AndroidInAppWebViewForceDark fromValue(int value) {
+  const AndroidForceDark._internal(this._value);
+  static AndroidForceDark fromValue(int value) {
     if (value != null && value >= 0 && value <= 2)
-      return AndroidInAppWebViewForceDark._internal(value);
+      return AndroidForceDark._internal(value);
     return null;
   }
 
@@ -848,14 +839,14 @@ class AndroidInAppWebViewForceDark {
 
   ///Disable force dark, irrespective of the force dark mode of the WebView parent.
   ///In this mode, WebView content will always be rendered as-is, regardless of whether native views are being automatically darkened.
-  static const FORCE_DARK_OFF = const AndroidInAppWebViewForceDark._internal(0);
+  static const FORCE_DARK_OFF = const AndroidForceDark._internal(0);
 
   ///Enable force dark dependent on the state of the WebView parent view.
   static const FORCE_DARK_AUTO =
-      const AndroidInAppWebViewForceDark._internal(1);
+      const AndroidForceDark._internal(1);
 
   ///Unconditionally enable force dark. In this mode WebView content will always be rendered so as to emulate a dark theme.
-  static const FORCE_DARK_ON = const AndroidInAppWebViewForceDark._internal(2);
+  static const FORCE_DARK_ON = const AndroidForceDark._internal(2);
 
   bool operator ==(value) => value == _value;
 
@@ -863,13 +854,13 @@ class AndroidInAppWebViewForceDark {
   int get hashCode => _value.hashCode;
 }
 
-///AndroidInAppWebViewLayoutAlgorithm class represents an Android-specific class used to set the underlying layout algorithm.
-class AndroidInAppWebViewLayoutAlgorithm {
+///Class that represents an Android-specific class used to set the underlying layout algorithm.
+class AndroidLayoutAlgorithm {
   final String _value;
-  const AndroidInAppWebViewLayoutAlgorithm._internal(this._value);
-  static AndroidInAppWebViewLayoutAlgorithm fromValue(String value) {
+  const AndroidLayoutAlgorithm._internal(this._value);
+  static AndroidLayoutAlgorithm fromValue(String value) {
     return (["NORMAL", "TEXT_AUTOSIZING"].contains(value))
-        ? AndroidInAppWebViewLayoutAlgorithm._internal(value)
+        ? AndroidLayoutAlgorithm._internal(value)
         : null;
   }
 
@@ -879,14 +870,14 @@ class AndroidInAppWebViewLayoutAlgorithm {
 
   ///NORMAL means no rendering changes. This is the recommended choice for maximum compatibility across different platforms and Android versions.
   static const NORMAL =
-      const AndroidInAppWebViewLayoutAlgorithm._internal("NORMAL");
+      const AndroidLayoutAlgorithm._internal("NORMAL");
 
   ///TEXT_AUTOSIZING boosts font size of paragraphs based on heuristics to make the text readable when viewing a wide-viewport layout in the overview mode.
   ///It is recommended to enable zoom support [AndroidInAppWebViewOptions.supportZoom] when using this mode.
   ///
   ///**NOTE**: available on Android 19+.
   static const TEXT_AUTOSIZING =
-      const AndroidInAppWebViewLayoutAlgorithm._internal("TEXT_AUTOSIZING");
+      const AndroidLayoutAlgorithm._internal("TEXT_AUTOSIZING");
 
   bool operator ==(value) => value == _value;
 
@@ -894,15 +885,15 @@ class AndroidInAppWebViewLayoutAlgorithm {
   int get hashCode => _value.hashCode;
 }
 
-///AndroidInAppWebViewMixedContentMode class represents an Android-specific class used to configure the WebView's behavior when a secure origin attempts to load a resource from an insecure origin.
+///Class that represents an Android-specific class used to configure the WebView's behavior when a secure origin attempts to load a resource from an insecure origin.
 ///
 ///**NOTE**: available on Android 21+.
-class AndroidInAppWebViewMixedContentMode {
+class AndroidMixedContentMode {
   final int _value;
-  const AndroidInAppWebViewMixedContentMode._internal(this._value);
-  static AndroidInAppWebViewMixedContentMode fromValue(int value) {
+  const AndroidMixedContentMode._internal(this._value);
+  static AndroidMixedContentMode fromValue(int value) {
     if (value != null && value >= 0 && value <= 2)
-      return AndroidInAppWebViewMixedContentMode._internal(value);
+      return AndroidMixedContentMode._internal(value);
     return null;
   }
 
@@ -923,20 +914,20 @@ class AndroidInAppWebViewMixedContentMode {
   ///In this mode, the WebView will allow a secure origin to load content from any other origin, even if that origin is insecure.
   ///This is the least secure mode of operation for the WebView, and where possible apps should not set this mode.
   static const MIXED_CONTENT_ALWAYS_ALLOW =
-      const AndroidInAppWebViewMixedContentMode._internal(0);
+      const AndroidMixedContentMode._internal(0);
 
   ///In this mode, the WebView will not allow a secure origin to load content from an insecure origin.
   ///This is the preferred and most secure mode of operation for the WebView and apps are strongly advised to use this mode.
   static const MIXED_CONTENT_NEVER_ALLOW =
-      const AndroidInAppWebViewMixedContentMode._internal(1);
+      const AndroidMixedContentMode._internal(1);
 
   ///In this mode, the WebView will attempt to be compatible with the approach of a modern web browser with regard to mixed content.
   ///Some insecure content may be allowed to be loaded by a secure origin and other types of content will be blocked.
   ///The types of content are allowed or blocked may change release to release and are not explicitly defined.
   ///This mode is intended to be used by apps that are not in control of the content that they render but desire to operate in a reasonably secure environment.
-  ///For highest security, apps are recommended to use [AndroidInAppWebViewMixedContentMode.MIXED_CONTENT_NEVER_ALLOW].
+  ///For highest security, apps are recommended to use [AndroidMixedContentMode.MIXED_CONTENT_NEVER_ALLOW].
   static const MIXED_CONTENT_COMPATIBILITY_MODE =
-      const AndroidInAppWebViewMixedContentMode._internal(2);
+      const AndroidMixedContentMode._internal(2);
 
   bool operator ==(value) => value == _value;
 
@@ -944,13 +935,13 @@ class AndroidInAppWebViewMixedContentMode {
   int get hashCode => _value.hashCode;
 }
 
-///IOSInAppWebViewSelectionGranularity class represents an iOS-specific class used to set the level of granularity with which the user can interactively select content in the web view.
-class IOSInAppWebViewSelectionGranularity {
+///Class that represents an iOS-specific class used to set the level of granularity with which the user can interactively select content in the web view.
+class IOSWKSelectionGranularity {
   final int _value;
-  const IOSInAppWebViewSelectionGranularity._internal(this._value);
-  static IOSInAppWebViewSelectionGranularity fromValue(int value) {
+  const IOSWKSelectionGranularity._internal(this._value);
+  static IOSWKSelectionGranularity fromValue(int value) {
     if (value != null && value >= 0 && value <= 1)
-      return IOSInAppWebViewSelectionGranularity._internal(value);
+      return IOSWKSelectionGranularity._internal(value);
     return null;
   }
 
@@ -967,11 +958,11 @@ class IOSInAppWebViewSelectionGranularity {
   }
 
   ///Selection granularity varies automatically based on the selection.
-  static const DYNAMIC = const IOSInAppWebViewSelectionGranularity._internal(0);
+  static const DYNAMIC = const IOSWKSelectionGranularity._internal(0);
 
   ///Selection endpoints can be placed at any character boundary.
   static const CHARACTER =
-      const IOSInAppWebViewSelectionGranularity._internal(1);
+      const IOSWKSelectionGranularity._internal(1);
 
   bool operator ==(value) => value == _value;
 
@@ -979,13 +970,13 @@ class IOSInAppWebViewSelectionGranularity {
   int get hashCode => _value.hashCode;
 }
 
-///IOSInAppWebViewDataDetectorTypes class represents an iOS-specific class used to specify a dataDetectoryTypes value that adds interactivity to web content that matches the value.
+///Class that represents an iOS-specific class used to specify a dataDetectoryTypes value that adds interactivity to web content that matches the value.
 ///
 ///**NOTE**: available on iOS 10.0+.
-class IOSInAppWebViewDataDetectorTypes {
+class IOSWKDataDetectorTypes {
   final String _value;
-  const IOSInAppWebViewDataDetectorTypes._internal(this._value);
-  static IOSInAppWebViewDataDetectorTypes fromValue(String value) {
+  const IOSWKDataDetectorTypes._internal(this._value);
+  static IOSWKDataDetectorTypes fromValue(String value) {
     return ([
       "NONE",
       "PHONE_NUMBER",
@@ -999,7 +990,7 @@ class IOSInAppWebViewDataDetectorTypes {
       "SPOTLIGHT_SUGGESTION",
       "ALL"
     ].contains(value))
-        ? IOSInAppWebViewDataDetectorTypes._internal(value)
+        ? IOSWKDataDetectorTypes._internal(value)
         : null;
   }
 
@@ -1008,41 +999,41 @@ class IOSInAppWebViewDataDetectorTypes {
   String toString() => _value;
 
   ///No detection is performed.
-  static const NONE = const IOSInAppWebViewDataDetectorTypes._internal("NONE");
+  static const NONE = const IOSWKDataDetectorTypes._internal("NONE");
 
   ///Phone numbers are detected and turned into links.
   static const PHONE_NUMBER =
-      const IOSInAppWebViewDataDetectorTypes._internal("PHONE_NUMBER");
+      const IOSWKDataDetectorTypes._internal("PHONE_NUMBER");
 
   ///URLs in text are detected and turned into links.
-  static const LINK = const IOSInAppWebViewDataDetectorTypes._internal("LINK");
+  static const LINK = const IOSWKDataDetectorTypes._internal("LINK");
 
   ///Addresses are detected and turned into links.
   static const ADDRESS =
-      const IOSInAppWebViewDataDetectorTypes._internal("ADDRESS");
+      const IOSWKDataDetectorTypes._internal("ADDRESS");
 
   ///Dates and times that are in the future are detected and turned into links.
   static const CALENDAR_EVENT =
-      const IOSInAppWebViewDataDetectorTypes._internal("CALENDAR_EVENT");
+      const IOSWKDataDetectorTypes._internal("CALENDAR_EVENT");
 
   ///Tracking numbers are detected and turned into links.
   static const TRACKING_NUMBER =
-      const IOSInAppWebViewDataDetectorTypes._internal("TRACKING_NUMBER");
+      const IOSWKDataDetectorTypes._internal("TRACKING_NUMBER");
 
   ///Flight numbers are detected and turned into links.
   static const FLIGHT_NUMBER =
-      const IOSInAppWebViewDataDetectorTypes._internal("FLIGHT_NUMBER");
+      const IOSWKDataDetectorTypes._internal("FLIGHT_NUMBER");
 
   ///Lookup suggestions are detected and turned into links.
   static const LOOKUP_SUGGESTION =
-      const IOSInAppWebViewDataDetectorTypes._internal("LOOKUP_SUGGESTION");
+      const IOSWKDataDetectorTypes._internal("LOOKUP_SUGGESTION");
 
   ///Spotlight suggestions are detected and turned into links.
   static const SPOTLIGHT_SUGGESTION =
-      const IOSInAppWebViewDataDetectorTypes._internal("SPOTLIGHT_SUGGESTION");
+      const IOSWKDataDetectorTypes._internal("SPOTLIGHT_SUGGESTION");
 
   ///All of the above data types are turned into links when detected. Choosing this value will automatically include any new detection type that is added.
-  static const ALL = const IOSInAppWebViewDataDetectorTypes._internal("ALL");
+  static const ALL = const IOSWKDataDetectorTypes._internal("ALL");
 
   bool operator ==(value) => value == _value;
 
@@ -1050,13 +1041,42 @@ class IOSInAppWebViewDataDetectorTypes {
   int get hashCode => _value.hashCode;
 }
 
-///InAppWebViewUserPreferredContentMode class represents the content mode to prefer when loading and rendering a webpage.
-class InAppWebViewUserPreferredContentMode {
+///Class that represents a floating-point value that determines the rate of deceleration after the user lifts their finger.
+class IOSUIScrollViewDecelerationRate {
+  final String _value;
+  const IOSUIScrollViewDecelerationRate._internal(this._value);
+  static IOSUIScrollViewDecelerationRate fromValue(String value) {
+    return ([
+      "NORMAL",
+      "FAST"
+    ].contains(value))
+        ? IOSUIScrollViewDecelerationRate._internal(value)
+        : null;
+  }
+
+  String toValue() => _value;
+  @override
+  String toString() => _value;
+
+  ///The default deceleration rate for a scroll view: `0.998`.
+  static const NORMAL = const IOSUIScrollViewDecelerationRate._internal("NORMAL");
+
+  ///A fast deceleration rate for a scroll view: `0.99`.
+  static const FAST = const IOSUIScrollViewDecelerationRate._internal("FAST");
+
+  bool operator ==(value) => value == _value;
+
+  @override
+  int get hashCode => _value.hashCode;
+}
+
+///Class that represents the content mode to prefer when loading and rendering a webpage.
+class UserPreferredContentMode {
   final int _value;
-  const InAppWebViewUserPreferredContentMode._internal(this._value);
-  static InAppWebViewUserPreferredContentMode fromValue(int value) {
+  const UserPreferredContentMode._internal(this._value);
+  static UserPreferredContentMode fromValue(int value) {
     if (value != null && value >= 0 && value <= 2)
-      return InAppWebViewUserPreferredContentMode._internal(value);
+      return UserPreferredContentMode._internal(value);
     return null;
   }
 
@@ -1076,14 +1096,14 @@ class InAppWebViewUserPreferredContentMode {
 
   ///The recommended content mode for the current platform.
   static const RECOMMENDED =
-      const InAppWebViewUserPreferredContentMode._internal(0);
+      const UserPreferredContentMode._internal(0);
 
   ///Represents content targeting mobile browsers.
-  static const MOBILE = const InAppWebViewUserPreferredContentMode._internal(1);
+  static const MOBILE = const UserPreferredContentMode._internal(1);
 
   ///Represents content targeting desktop browsers.
   static const DESKTOP =
-      const InAppWebViewUserPreferredContentMode._internal(2);
+      const UserPreferredContentMode._internal(2);
 
   bool operator ==(value) => value == _value;
 
@@ -1091,13 +1111,13 @@ class InAppWebViewUserPreferredContentMode {
   int get hashCode => _value.hashCode;
 }
 
-///IOSWebViewOptionsPresentationStyle class represents an iOS-specific class used to specify the modal presentation style when presenting a view controller.
-class IOSWebViewOptionsPresentationStyle {
+///Class that represents an iOS-specific class used to specify the modal presentation style when presenting a view controller.
+class IOSUIModalPresentationStyle {
   final int _value;
-  const IOSWebViewOptionsPresentationStyle._internal(this._value);
-  static IOSWebViewOptionsPresentationStyle fromValue(int value) {
+  const IOSUIModalPresentationStyle._internal(this._value);
+  static IOSUIModalPresentationStyle fromValue(int value) {
     if (value != null && value >= 0 && value <= 9)
-      return IOSWebViewOptionsPresentationStyle._internal(value);
+      return IOSUIModalPresentationStyle._internal(value);
     return null;
   }
 
@@ -1131,42 +1151,42 @@ class IOSWebViewOptionsPresentationStyle {
 
   ///A presentation style in which the presented view covers the screen.
   static const FULL_SCREEN =
-      const IOSWebViewOptionsPresentationStyle._internal(0);
+      const IOSUIModalPresentationStyle._internal(0);
 
   ///A presentation style that partially covers the underlying content.
   static const PAGE_SHEET =
-      const IOSWebViewOptionsPresentationStyle._internal(1);
+      const IOSUIModalPresentationStyle._internal(1);
 
   ///A presentation style that displays the content centered in the screen.
   static const FORM_SHEET =
-      const IOSWebViewOptionsPresentationStyle._internal(2);
+      const IOSUIModalPresentationStyle._internal(2);
 
   ///A presentation style where the content is displayed over another view controller’s content.
   static const CURRENT_CONTEXT =
-      const IOSWebViewOptionsPresentationStyle._internal(3);
+      const IOSUIModalPresentationStyle._internal(3);
 
   ///A custom view presentation style that is managed by a custom presentation controller and one or more custom animator objects.
-  static const CUSTOM = const IOSWebViewOptionsPresentationStyle._internal(4);
+  static const CUSTOM = const IOSUIModalPresentationStyle._internal(4);
 
   ///A view presentation style in which the presented view covers the screen.
   static const OVER_FULL_SCREEN =
-      const IOSWebViewOptionsPresentationStyle._internal(5);
+      const IOSUIModalPresentationStyle._internal(5);
 
   ///A presentation style where the content is displayed over another view controller’s content.
   static const OVER_CURRENT_CONTEXT =
-      const IOSWebViewOptionsPresentationStyle._internal(6);
+      const IOSUIModalPresentationStyle._internal(6);
 
   ///A presentation style where the content is displayed in a popover view.
-  static const POPOVER = const IOSWebViewOptionsPresentationStyle._internal(7);
+  static const POPOVER = const IOSUIModalPresentationStyle._internal(7);
 
   ///A presentation style that indicates no adaptations should be made.
-  static const NONE = const IOSWebViewOptionsPresentationStyle._internal(8);
+  static const NONE = const IOSUIModalPresentationStyle._internal(8);
 
   ///The default presentation style chosen by the system.
   ///
   ///**NOTE**: available on iOS 13.0+.
   static const AUTOMATIC =
-      const IOSWebViewOptionsPresentationStyle._internal(9);
+      const IOSUIModalPresentationStyle._internal(9);
 
   bool operator ==(value) => value == _value;
 
@@ -1174,13 +1194,13 @@ class IOSWebViewOptionsPresentationStyle {
   int get hashCode => _value.hashCode;
 }
 
-///IOSWebViewOptionsTransitionStyle class represents an iOS-specific class used to specify the transition style when presenting a view controller.
-class IOSWebViewOptionsTransitionStyle {
+///Class that represents an iOS-specific class used to specify the transition style when presenting a view controller.
+class IOSUIModalTransitionStyle {
   final int _value;
-  const IOSWebViewOptionsTransitionStyle._internal(this._value);
-  static IOSWebViewOptionsTransitionStyle fromValue(int value) {
+  const IOSUIModalTransitionStyle._internal(this._value);
+  static IOSUIModalTransitionStyle fromValue(int value) {
     if (value != null && value >= 0 && value <= 3)
-      return IOSWebViewOptionsTransitionStyle._internal(value);
+      return IOSUIModalTransitionStyle._internal(value);
     return null;
   }
 
@@ -1203,24 +1223,24 @@ class IOSWebViewOptionsTransitionStyle {
   ///When the view controller is presented, its view slides up from the bottom of the screen.
   ///On dismissal, the view slides back down. This is the default transition style.
   static const COVER_VERTICAL =
-      const IOSWebViewOptionsTransitionStyle._internal(0);
+      const IOSUIModalTransitionStyle._internal(0);
 
   ///When the view controller is presented, the current view initiates a horizontal 3D flip from right-to-left,
   ///resulting in the revealing of the new view as if it were on the back of the previous view.
   ///On dismissal, the flip occurs from left-to-right, returning to the original view.
   static const FLIP_HORIZONTAL =
-      const IOSWebViewOptionsTransitionStyle._internal(1);
+      const IOSUIModalTransitionStyle._internal(1);
 
   ///When the view controller is presented, the current view fades out while the new view fades in at the same time.
   ///On dismissal, a similar type of cross-fade is used to return to the original view.
   static const CROSS_DISSOLVE =
-      const IOSWebViewOptionsTransitionStyle._internal(2);
+      const IOSUIModalTransitionStyle._internal(2);
 
   ///When the view controller is presented, one corner of the current view curls up to reveal the presented view underneath.
   ///On dismissal, the curled up page unfurls itself back on top of the presented view.
   ///A view controller presented using this transition is itself prevented from presenting any additional view controllers.
   static const PARTIAL_CURL =
-      const IOSWebViewOptionsTransitionStyle._internal(3);
+      const IOSUIModalTransitionStyle._internal(3);
 
   bool operator ==(value) => value == _value;
 
@@ -1228,15 +1248,15 @@ class IOSWebViewOptionsTransitionStyle {
   int get hashCode => _value.hashCode;
 }
 
-///IOSSafariOptionsDismissButtonStyle class represents an iOS-specific class used to set the custom style for the dismiss button.
+///Class that represents an iOS-specific class used to set the custom style for the dismiss button.
 ///
 ///**NOTE**: available on iOS 11.0+.
-class IOSSafariOptionsDismissButtonStyle {
+class IOSSafariDismissButtonStyle {
   final int _value;
-  const IOSSafariOptionsDismissButtonStyle._internal(this._value);
-  static IOSSafariOptionsDismissButtonStyle fromValue(int value) {
+  const IOSSafariDismissButtonStyle._internal(this._value);
+  static IOSSafariDismissButtonStyle fromValue(int value) {
     if (value != null && value >= 0 && value <= 2)
-      return IOSSafariOptionsDismissButtonStyle._internal(value);
+      return IOSSafariDismissButtonStyle._internal(value);
     return null;
   }
 
@@ -1255,13 +1275,13 @@ class IOSSafariOptionsDismissButtonStyle {
   }
 
   ///Makes the button title the localized string "Done".
-  static const DONE = const IOSSafariOptionsDismissButtonStyle._internal(0);
+  static const DONE = const IOSSafariDismissButtonStyle._internal(0);
 
   ///Makes the button title the localized string "Close".
-  static const CLOSE = const IOSSafariOptionsDismissButtonStyle._internal(1);
+  static const CLOSE = const IOSSafariDismissButtonStyle._internal(1);
 
   ///Makes the button title the localized string "Cancel".
-  static const CANCEL = const IOSSafariOptionsDismissButtonStyle._internal(2);
+  static const CANCEL = const IOSSafariDismissButtonStyle._internal(2);
 
   bool operator ==(value) => value == _value;
 
@@ -1269,8 +1289,8 @@ class IOSSafariOptionsDismissButtonStyle {
   int get hashCode => _value.hashCode;
 }
 
-///InAppWebViewWidgetOptions class represents the options that can be used for an [InAppWebView].
-class InAppWebViewWidgetOptions {
+///Class that represents the options that can be used for a [WebView].
+class InAppWebViewGroupOptions {
   ///Cross-platform options.
   InAppWebViewOptions crossPlatform;
 
@@ -1280,13 +1300,28 @@ class InAppWebViewWidgetOptions {
   ///iOS-specific options.
   IOSInAppWebViewOptions ios;
 
-  InAppWebViewWidgetOptions(
+  InAppWebViewGroupOptions(
       {this.crossPlatform,
       this.android,
       this.ios});
+
+  Map<String, dynamic> toMap() {
+    Map<String, dynamic> options = {};
+    options.addAll(this.crossPlatform?.toMap() ?? {});
+    if (Platform.isAndroid)
+      options.addAll(this.android?.toMap() ?? {});
+    else if (Platform.isIOS)
+      options.addAll(this.ios?.toMap() ?? {});
+
+    return options;
+  }
+
+  Map<String, dynamic> toJson() {
+    return this.toMap();
+  }
 }
 
-///InAppBrowserClassOptions class represents the options that can be used for an [InAppBrowser] WebView.
+///Class that represents the options that can be used for an [InAppBrowser] WebView.
 class InAppBrowserClassOptions {
   ///Cross-platform options.
   InAppBrowserOptions crossPlatform;
@@ -1298,16 +1333,42 @@ class InAppBrowserClassOptions {
   IOSInAppBrowserOptions ios;
 
   ///WebView options.
-  InAppWebViewWidgetOptions inAppWebViewWidgetOptions;
+  InAppWebViewGroupOptions inAppWebViewGroupOptions;
 
   InAppBrowserClassOptions(
       {this.crossPlatform,
       this.android,
       this.ios,
-      this.inAppWebViewWidgetOptions});
+      this.inAppWebViewGroupOptions});
+
+  Map<String, dynamic> toMap() {
+    Map<String, dynamic> options = {};
+
+    options.addAll(this.crossPlatform?.toMap() ?? {});
+    options.addAll(
+        this.inAppWebViewGroupOptions?.crossPlatform?.toMap() ?? {});
+    if (Platform.isAndroid) {
+      options.addAll(this.android?.toMap() ?? {});
+      options.addAll(this
+          .inAppWebViewGroupOptions?.android
+          ?.toMap() ??
+          {});
+    } else if (Platform.isIOS) {
+      options.addAll(this.ios?.toMap() ?? {});
+      options.addAll(
+          this.inAppWebViewGroupOptions?.ios?.toMap() ??
+              {});
+    }
+
+    return options;
+  }
+
+  Map<String, dynamic> toJson() {
+    return this.toMap();
+  }
 }
 
-///ChromeSafariBrowserClassOptions class represents the options that can be used for an [ChromeSafariBrowser] window.
+///Class that represents the options that can be used for an [ChromeSafariBrowser] window.
 class ChromeSafariBrowserClassOptions {
   ///Android-specific options.
   AndroidChromeCustomTabsOptions android;
@@ -1317,9 +1378,23 @@ class ChromeSafariBrowserClassOptions {
 
   ChromeSafariBrowserClassOptions(
       {this.android, this.ios});
+
+  Map<String, dynamic> toMap() {
+    Map<String, dynamic> options = {};
+    if (Platform.isAndroid)
+      options.addAll(this.android?.toMap() ?? {});
+    else if (Platform.isIOS)
+      options.addAll(this.ios?.toMap() ?? {});
+
+    return options;
+  }
+
+  Map<String, dynamic> toJson() {
+    return this.toMap();
+  }
 }
 
-///AjaxRequestAction class used by [AjaxRequest] class.
+///Class used by [AjaxRequest] class.
 class AjaxRequestAction {
   final int _value;
   const AjaxRequestAction._internal(this._value);
@@ -1347,7 +1422,7 @@ class AjaxRequestAction {
   }
 }
 
-///AjaxRequestEventType class used by [AjaxRequestEvent] class.
+///Class used by [AjaxRequestEvent] class.
 class AjaxRequestEventType {
   final String _value;
   const AjaxRequestEventType._internal(this._value);
@@ -1389,7 +1464,7 @@ class AjaxRequestEventType {
   int get hashCode => _value.hashCode;
 }
 
-///AjaxRequestEvent class used by [AjaxRequest] class. It represents events measuring progress of an [AjaxRequest].
+///Class used by [AjaxRequest] class. It represents events measuring progress of an [AjaxRequest].
 class AjaxRequestEvent {
   ///Event type.
   AjaxRequestEventType type;
@@ -1410,7 +1485,7 @@ class AjaxRequestEvent {
   AjaxRequestEvent({this.type, this.lengthComputable, this.loaded, this.total});
 }
 
-///AjaxRequestReadyState class used by [AjaxRequest] class. It represents the state of an [AjaxRequest].
+///Class used by [AjaxRequest] class. It represents the state of an [AjaxRequest].
 class AjaxRequestReadyState {
   final int _value;
   const AjaxRequestReadyState._internal(this._value);
@@ -1459,7 +1534,7 @@ class AjaxRequestReadyState {
   int get hashCode => _value.hashCode;
 }
 
-///AjaxRequestHeaders class represents the HTTP headers of an [AjaxRequest].
+///Class that represents the HTTP headers of an [AjaxRequest].
 class AjaxRequestHeaders {
   Map<dynamic, dynamic> _headers;
   Map<String, dynamic> _newHeaders = {};
@@ -1484,7 +1559,7 @@ class AjaxRequestHeaders {
   }
 }
 
-///AjaxRequest class represents a JavaScript [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) object.
+///Class that represents a JavaScript [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) object.
 class AjaxRequest {
   ///Data passed as a parameter to the `XMLHttpRequest.send()` method.
   dynamic data;
@@ -1602,7 +1677,7 @@ class AjaxRequest {
   }
 }
 
-///FetchRequestAction class used by [FetchRequest] class.
+///Class used by [FetchRequest] class.
 class FetchRequestAction {
   final int _value;
   const FetchRequestAction._internal(this._value);
@@ -1620,7 +1695,7 @@ class FetchRequestAction {
   int get hashCode => _value.hashCode;
 }
 
-///FetchRequestCredential class is an interface for [FetchRequestCredentialDefault], [FetchRequestFederatedCredential] and [FetchRequestPasswordCredential] classes.
+///Class that is an interface for [FetchRequestCredentialDefault], [FetchRequestFederatedCredential] and [FetchRequestPasswordCredential] classes.
 class FetchRequestCredential {
   ///Type of credentials.
   String type;
@@ -1632,7 +1707,7 @@ class FetchRequestCredential {
   }
 }
 
-///FetchRequestCredentialDefault class represents the default credentials used by an [FetchRequest].
+///Class that represents the default credentials used by an [FetchRequest].
 class FetchRequestCredentialDefault extends FetchRequestCredential {
   ///The value of the credentials.
   String value;
@@ -1647,7 +1722,7 @@ class FetchRequestCredentialDefault extends FetchRequestCredential {
   }
 }
 
-///FetchRequestFederatedCredential class represents a [FederatedCredential](https://developer.mozilla.org/en-US/docs/Web/API/FederatedCredential) type of credentials.
+///Class that represents a [FederatedCredential](https://developer.mozilla.org/en-US/docs/Web/API/FederatedCredential) type of credentials.
 class FetchRequestFederatedCredential extends FetchRequestCredential {
   ///Credential's identifier.
   dynamic id;
@@ -1680,7 +1755,7 @@ class FetchRequestFederatedCredential extends FetchRequestCredential {
   }
 }
 
-///FetchRequestPasswordCredential class represents a [PasswordCredential](https://developer.mozilla.org/en-US/docs/Web/API/PasswordCredential) type of credentials.
+///Class that represents a [PasswordCredential](https://developer.mozilla.org/en-US/docs/Web/API/PasswordCredential) type of credentials.
 class FetchRequestPasswordCredential extends FetchRequestCredential {
   ///Credential's identifier.
   dynamic id;
@@ -1709,7 +1784,7 @@ class FetchRequestPasswordCredential extends FetchRequestCredential {
   }
 }
 
-///FetchRequest class represents a HTTP request created with JavaScript using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
+///Class that represents a HTTP request created with JavaScript using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
 class FetchRequest {
   ///The URL of the request.
   String url;
@@ -1814,7 +1889,7 @@ class FetchRequest {
   }
 }
 
-///ContentBlockerTriggerResourceType class represents the possible resource type defined for a [ContentBlockerTrigger].
+///Class that represents the possible resource type defined for a [ContentBlockerTrigger].
 class ContentBlockerTriggerResourceType {
   final String _value;
   const ContentBlockerTriggerResourceType._internal(this._value);
@@ -1860,7 +1935,7 @@ class ContentBlockerTriggerResourceType {
   int get hashCode => _value.hashCode;
 }
 
-///ContentBlockerTriggerLoadType class represents the possible load type for a [ContentBlockerTrigger].
+///Class that represents the possible load type for a [ContentBlockerTrigger].
 class ContentBlockerTriggerLoadType {
   final String _value;
   const ContentBlockerTriggerLoadType._internal(this._value);
@@ -1888,7 +1963,7 @@ class ContentBlockerTriggerLoadType {
   int get hashCode => _value.hashCode;
 }
 
-///ContentBlockerActionType class represents the kind of action that can be used with a [ContentBlockerTrigger].
+///Class that represents the kind of action that can be used with a [ContentBlockerTrigger].
 class ContentBlockerActionType {
   final String _value;
   const ContentBlockerActionType._internal(this._value);
@@ -1921,7 +1996,7 @@ class ContentBlockerActionType {
   int get hashCode => _value.hashCode;
 }
 
-///Cookie class represents a cookie returned by the [CookieManager].
+///Class that represents a cookie returned by the [CookieManager].
 class Cookie {
   ///The name;
   String name;
@@ -1932,7 +2007,7 @@ class Cookie {
   Cookie({@required this.name, @required this.value});
 }
 
-///PermissionRequestResponseAction class used by [PermissionRequestResponse] class.
+///Class used by [PermissionRequestResponse] class.
 class PermissionRequestResponseAction {
   final int _value;
   const PermissionRequestResponseAction._internal(this._value);
@@ -1950,7 +2025,7 @@ class PermissionRequestResponseAction {
   int get hashCode => _value.hashCode;
 }
 
-///PermissionRequestResponse class represents the response used by the [androidOnPermissionRequest] event.
+///Class that represents the response used by the [androidOnPermissionRequest] event.
 class PermissionRequestResponse {
   ///Resources granted to be accessed by origin.
   List<String> resources;
@@ -1967,7 +2042,7 @@ class PermissionRequestResponse {
   }
 }
 
-///ShouldOverrideUrlLoadingAction class is used by [shouldOverrideUrlLoading] event.
+///Class that is used by [shouldOverrideUrlLoading] event.
 ///It represents the policy to pass back to the decision handler.
 class ShouldOverrideUrlLoadingAction {
   final int _value;
@@ -1992,7 +2067,7 @@ class ShouldOverrideUrlLoadingAction {
   }
 }
 
-///IOSWKNavigationType class represents the type of action triggering a navigation on iOS for the [shouldOverrideUrlLoading] event.
+///Class that represents the type of action triggering a navigation on iOS for the [shouldOverrideUrlLoading] event.
 class IOSWKNavigationType {
   final int _value;
   const IOSWKNavigationType._internal(this._value);
@@ -2027,7 +2102,7 @@ class IOSWKNavigationType {
   int get hashCode => _value.hashCode;
 }
 
-///ShouldOverrideUrlLoadingAction class represents the navigation request used by the [shouldOverrideUrlLoading] event.
+///Class that represents the navigation request used by the [shouldOverrideUrlLoading] event.
 class ShouldOverrideUrlLoadingRequest {
   ///Represents the url of the navigation request.
   String url;
@@ -2058,7 +2133,7 @@ class ShouldOverrideUrlLoadingRequest {
   ShouldOverrideUrlLoadingRequest({this.url, this.method, this.headers, this.isForMainFrame, this.androidHasGesture, this.androidIsRedirect, this.iosWKNavigationType});
 }
 
-///OnCreateWindowRequest class represents the navigation request used by the [shouldOverrideUrlLoading] event.
+///Class that represents the navigation request used by the [shouldOverrideUrlLoading] event.
 class OnCreateWindowRequest {
   ///Represents the url of the navigation request.
   String url;
@@ -2075,7 +2150,7 @@ class OnCreateWindowRequest {
   OnCreateWindowRequest({this.url, this.androidIsDialog, this.androidIsUserGesture, this.iosWKNavigationType});
 }
 
-///AndroidWebStorage class encapsulates information about the amount of storage currently used by an origin for the JavaScript storage APIs.
+///Class that encapsulates information about the amount of storage currently used by an origin for the JavaScript storage APIs.
 ///An origin comprises the host, scheme and port of a URI. See [AndroidWebStorageManager] for details.
 class AndroidWebStorageOrigin {
   ///The string representation of this origin.
@@ -2102,7 +2177,7 @@ class AndroidWebStorageOrigin {
   }
 }
 
-///IOSWKWebsiteDataType class represents a website data type.
+///Class that represents a website data type.
 ///
 ///**NOTE**: available on iOS 9.0+.
 class IOSWKWebsiteDataType {
@@ -2193,7 +2268,7 @@ class IOSWKWebsiteDataType {
   int get hashCode => _value.hashCode;
 }
 
-///WKWebsiteDataRecord class represents website data, grouped by domain name using the public suffix list.
+///Class that represents website data, grouped by domain name using the public suffix list.
 ///
 ///**NOTE**: available on iOS 9.0+.
 class IOSWKWebsiteDataRecord {
@@ -2220,4 +2295,71 @@ class IOSWKWebsiteDataRecord {
   String toString() {
     return toMap().toString();
   }
+}
+
+///Class representing the [LongPressHitTestResult] type.
+class LongPressHitTestResultType {
+  final int _value;
+  const LongPressHitTestResultType._internal(this._value);
+  static LongPressHitTestResultType fromValue(int value) {
+    if (value != null && [0, 2, 3, 4, 5, 7, 8, 9].contains(value))
+      return LongPressHitTestResultType._internal(value);
+    return null;
+  }
+
+  int toValue() => _value;
+  @override
+  String toString() {
+    switch (_value) {
+      case 2:
+        return "PHONE_TYPE";
+      case 3:
+        return "GEO_TYPE";
+      case 4:
+        return "EMAIL_TYPE";
+      case 5:
+        return "IMAGE_TYPE";
+      case 7:
+        return "SRC_ANCHOR_TYPE";
+      case 8:
+        return "SRC_IMAGE_ANCHOR_TYPE";
+      case 9:
+        return "EDIT_TEXT_TYPE";
+      case 0:
+      default:
+        return "UNKNOWN_TYPE";
+    }
+  }
+
+  ///Default [LongPressHitTestResult], where the target is unknown.
+  static const UNKNOWN_TYPE = const LongPressHitTestResultType._internal(0);
+  ///[LongPressHitTestResult] for hitting a phone number.
+  static const PHONE_TYPE = const LongPressHitTestResultType._internal(2);
+  ///[LongPressHitTestResult] for hitting a map address.
+  static const GEO_TYPE = const LongPressHitTestResultType._internal(3);
+  ///[LongPressHitTestResult] for hitting an email address.
+  static const EMAIL_TYPE = const LongPressHitTestResultType._internal(4);
+  ///[LongPressHitTestResult] for hitting an HTML::img tag.
+  static const IMAGE_TYPE = const LongPressHitTestResultType._internal(5);
+  ///[LongPressHitTestResult] for hitting a HTML::a tag with src=http.
+  static const SRC_ANCHOR_TYPE = const LongPressHitTestResultType._internal(7);
+  ///[LongPressHitTestResult] for hitting a HTML::a tag with src=http + HTML::img.
+  static const SRC_IMAGE_ANCHOR_TYPE = const LongPressHitTestResultType._internal(8);
+  ///[LongPressHitTestResult] for hitting an edit text area.
+  static const EDIT_TEXT_TYPE = const LongPressHitTestResultType._internal(9);
+
+  bool operator ==(value) => value == _value;
+
+  @override
+  int get hashCode => _value.hashCode;
+}
+
+///Class that represents the hit result for hitting an HTML elements. Used by [onLongPressHitTestResult] event.
+class LongPressHitTestResult {
+  ///The type of the hit test result.
+  LongPressHitTestResultType type;
+  ///Additional type-dependant information about the result.
+  String extra;
+
+  LongPressHitTestResult({this.type, this.extra});
 }
