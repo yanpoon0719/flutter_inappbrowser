@@ -57,6 +57,10 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    if (savedInstanceState != null) {
+      return;
+    }
+
     Bundle b = getIntent().getExtras();
     uuid = b.getString("uuid");
 
@@ -72,6 +76,7 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
     fromActivity = b.getString("fromActivity");
 
     HashMap<String, Object> optionsMap = (HashMap<String, Object>) b.getSerializable("options");
+    HashMap<String, Object> contextMenu = (HashMap<String, Object>) b.getSerializable("contextMenu");
 
     options = new InAppBrowserOptions();
     options.parse(optionsMap);
@@ -79,6 +84,7 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
     InAppWebViewOptions webViewOptions = new InAppWebViewOptions();
     webViewOptions.parse(optionsMap);
     webView.options = webViewOptions;
+    webView.contextMenu = contextMenu;
 
     actionBar = getSupportActionBar();
     actionBar.hide();
@@ -224,7 +230,7 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
         result.success(isHidden);
         break;
       case "takeScreenshot":
-        result.success(takeScreenshot());
+        takeScreenshot(result);
         break;
       case "setOptions":
         {
@@ -330,6 +336,16 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
         break;
       case "getScale":
         result.success(getScale());
+        break;
+      case "getSelectedText":
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+          getSelectedText(result);
+        } else {
+          result.success(null);
+        }
+        break;
+      case "getHitTestResult":
+        result.success(getHitTestResult());
         break;
       default:
         result.notImplemented();
@@ -621,24 +637,11 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
     close(null);
   }
 
-  public byte[] takeScreenshot() {
-    if (webView != null) {
-      Picture picture = webView.capturePicture();
-      Bitmap b = Bitmap.createBitmap( webView.getWidth(),
-              webView.getHeight(), Bitmap.Config.ARGB_8888);
-      Canvas c = new Canvas(b);
-
-      picture.draw(c);
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      b.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-      try {
-        byteArrayOutputStream.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      return byteArrayOutputStream.toByteArray();
-    }
-    return null;
+  public void takeScreenshot(MethodChannel.Result result) {
+    if (webView != null)
+      webView.takeScreenshot(result);
+    else
+      result.success(null);
   }
 
   public void setOptions(InAppBrowserOptions newOptions, HashMap<String, Object> newOptionsMap) {
@@ -842,6 +845,25 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
   public Float getScale() {
     if (webView != null)
       return webView.getUpdatedScale();
+    return null;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  public void getSelectedText(MethodChannel.Result result) {
+    if (webView != null)
+      webView.getSelectedText(result);
+    else
+      result.success(null);
+  }
+
+  public Map<String, Object> getHitTestResult() {
+    if (webView != null) {
+      WebView.HitTestResult hitTestResult = webView.getHitTestResult();
+      Map<String, Object> obj = new HashMap<>();
+      obj.put("type", hitTestResult.getType());
+      obj.put("extra", hitTestResult.getExtra());
+      return obj;
+    }
     return null;
   }
 
