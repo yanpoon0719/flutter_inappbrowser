@@ -308,6 +308,24 @@ public class InAppBrowserWebViewController: UIViewController, FlutterPlugin, UIS
                     result(nil)
                 }
                 break
+            case "clearFocus":
+                if webView != nil {
+                    webView!.clearFocus()
+                    result(true)
+                } else {
+                    result(false)
+                }
+                
+                break
+            case "setContextMenu":
+                if webView != nil {
+                    let contextMenu = arguments!["contextMenu"] as? [String: Any]
+                    webView!.contextMenu = contextMenu
+                    result(true)
+                } else {
+                    result(false)
+                }
+                break
             default:
                 result(FlutterMethodNotImplemented)
                 break
@@ -688,11 +706,12 @@ public class InAppBrowserWebViewController: UIViewController, FlutterPlugin, UIS
     }
     
     public func getOptions() -> [String: Any?]? {
-        if (self.browserOptions == nil || self.webView.getOptions() == nil) {
+        let webViewOptionsMap = self.webView.getOptions()
+        if (self.browserOptions == nil || webViewOptionsMap == nil) {
             return nil
         }
-        var optionsMap = self.browserOptions!.getHashMap()
-        optionsMap.merge(self.webView.getOptions()!, uniquingKeysWith: { (current, _) in current })
+        var optionsMap = self.browserOptions!.getRealOptions(obj: self)
+        optionsMap.merge(webViewOptionsMap!, uniquingKeysWith: { (current, _) in current })
         return optionsMap
     }
     

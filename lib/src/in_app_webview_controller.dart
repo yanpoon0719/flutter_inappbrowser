@@ -8,14 +8,27 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_inappwebview/src/webview.dart';
 
 import 'package:html/parser.dart' show parse;
 
+import 'context_menu.dart';
 import 'types.dart';
 import 'in_app_browser.dart';
 import 'webview_options.dart';
+import 'headless_in_app_webview.dart';
+import 'webview.dart';
+import 'in_app_webview.dart';
+
+///List of forbidden names for JavaScript handlers.
+const javaScriptHandlerForbiddenNames = [
+  "onLoadResource",
+  "shouldInterceptAjaxRequest",
+  "onAjaxReadyStateChange",
+  "onAjaxProgress",
+  "shouldInterceptFetchRequest",
+  "onPrint",
+  "androidKeyboardWorkaroundFocusoutEvent"
+];
 
 ///Controls a WebView, such as an [InAppWebView] widget instance, a [HeadlessInAppWebView] instance or [InAppBrowser] WebView instance.
 ///
@@ -25,9 +38,9 @@ class InAppWebViewController {
   WebView _webview;
   MethodChannel _channel;
   static MethodChannel _staticChannel =
-  MethodChannel('com.pichillilorenzo/flutter_inappwebview_static');
+      MethodChannel('com.pichillilorenzo/flutter_inappwebview_static');
   Map<String, JavaScriptHandlerCallback> javaScriptHandlersMap =
-  HashMap<String, JavaScriptHandlerCallback>();
+      HashMap<String, JavaScriptHandlerCallback>();
 
   // ignore: unused_field
   bool _isOpened = false;
@@ -107,38 +120,38 @@ class InAppWebViewController {
         String url = call.arguments["url"];
         String method = call.arguments["method"];
         Map<String, String> headers =
-        call.arguments["headers"]?.cast<String, String>();
+            call.arguments["headers"]?.cast<String, String>();
         bool isForMainFrame = call.arguments["isForMainFrame"];
         bool androidHasGesture = call.arguments["androidHasGesture"];
         bool androidIsRedirect = call.arguments["androidIsRedirect"];
         int iosWKNavigationType = call.arguments["iosWKNavigationType"];
 
         ShouldOverrideUrlLoadingRequest shouldOverrideUrlLoadingRequest =
-        ShouldOverrideUrlLoadingRequest(
-            url: url,
-            method: method,
-            headers: headers,
-            isForMainFrame: isForMainFrame,
-            androidHasGesture: androidHasGesture,
-            androidIsRedirect: androidIsRedirect,
-            iosWKNavigationType:
-            IOSWKNavigationType.fromValue(iosWKNavigationType));
+            ShouldOverrideUrlLoadingRequest(
+                url: url,
+                method: method,
+                headers: headers,
+                isForMainFrame: isForMainFrame,
+                androidHasGesture: androidHasGesture,
+                androidIsRedirect: androidIsRedirect,
+                iosWKNavigationType:
+                    IOSWKNavigationType.fromValue(iosWKNavigationType));
 
         if (_webview != null && _webview.shouldOverrideUrlLoading != null)
           return (await _webview.shouldOverrideUrlLoading(
-              this, shouldOverrideUrlLoadingRequest))
+                  this, shouldOverrideUrlLoadingRequest))
               ?.toMap();
         else if (_inAppBrowser != null)
           return (await _inAppBrowser
-              .shouldOverrideUrlLoading(shouldOverrideUrlLoadingRequest))
+                  .shouldOverrideUrlLoading(shouldOverrideUrlLoadingRequest))
               ?.toMap();
         break;
       case "onConsoleMessage":
         String message = call.arguments["message"];
         ConsoleMessageLevel messageLevel =
-        ConsoleMessageLevel.fromValue(call.arguments["messageLevel"]);
+            ConsoleMessageLevel.fromValue(call.arguments["messageLevel"]);
         ConsoleMessage consoleMessage =
-        ConsoleMessage(message: message, messageLevel: messageLevel);
+            ConsoleMessage(message: message, messageLevel: messageLevel);
         if (_webview != null && _webview.onConsoleMessage != null)
           _webview.onConsoleMessage(this, consoleMessage);
         else if (_inAppBrowser != null)
@@ -163,7 +176,7 @@ class InAppWebViewController {
         if (_webview != null && _webview.onLoadResourceCustomScheme != null) {
           try {
             var response =
-            await _webview.onLoadResourceCustomScheme(this, scheme, url);
+                await _webview.onLoadResourceCustomScheme(this, scheme, url);
             return (response != null) ? response.toJson() : null;
           } catch (error) {
             print(error);
@@ -172,7 +185,7 @@ class InAppWebViewController {
         } else if (_inAppBrowser != null) {
           try {
             var response =
-            await _inAppBrowser.onLoadResourceCustomScheme(scheme, url);
+                await _inAppBrowser.onLoadResourceCustomScheme(scheme, url);
             return (response != null) ? response.toJson() : null;
           } catch (error) {
             print(error);
@@ -191,7 +204,7 @@ class InAppWebViewController {
             androidIsDialog: androidIsDialog,
             androidIsUserGesture: androidIsUserGesture,
             iosWKNavigationType:
-            IOSWKNavigationType.fromValue(iosWKNavigationType));
+                IOSWKNavigationType.fromValue(iosWKNavigationType));
 
         if (_webview != null && _webview.onCreateWindow != null)
           _webview.onCreateWindow(this, onCreateWindowRequest);
@@ -203,11 +216,11 @@ class InAppWebViewController {
         if (_webview != null &&
             _webview.androidOnGeolocationPermissionsShowPrompt != null)
           return (await _webview.androidOnGeolocationPermissionsShowPrompt(
-              this, origin))
+                  this, origin))
               ?.toMap();
         else if (_inAppBrowser != null)
           return (await _inAppBrowser
-              .androidOnGeolocationPermissionsShowPrompt(origin))
+                  .androidOnGeolocationPermissionsShowPrompt(origin))
               ?.toMap();
         break;
       case "onGeolocationPermissionsHidePrompt":
@@ -216,6 +229,77 @@ class InAppWebViewController {
           await _webview.androidOnGeolocationPermissionsHidePrompt(this);
         else if (_inAppBrowser != null)
           await _inAppBrowser.androidOnGeolocationPermissionsHidePrompt();
+        break;
+      case "shouldInterceptRequest":
+        String url = call.arguments["url"];
+        String method = call.arguments["method"];
+        Map<String, String> headers =
+            call.arguments["headers"]?.cast<String, String>();
+        bool isForMainFrame = call.arguments["isForMainFrame"];
+        bool hasGesture = call.arguments["hasGesture"];
+        bool isRedirect = call.arguments["isRedirect"];
+
+        var request = new WebResourceRequest(
+            url: url,
+            method: method,
+            headers: headers,
+            isForMainFrame: isForMainFrame,
+            hasGesture: hasGesture,
+            isRedirect: isRedirect);
+
+        if (_webview != null && _webview.androidShouldInterceptRequest != null)
+          return (await _webview.androidShouldInterceptRequest(this, request))
+              ?.toMap();
+        else if (_inAppBrowser != null)
+          return (await _inAppBrowser.androidShouldInterceptRequest(request))
+              ?.toMap();
+        break;
+      case "onRenderProcessUnresponsive":
+        String url = call.arguments["url"];
+        if (_webview != null &&
+            _webview.androidOnRenderProcessUnresponsive != null)
+          return (await _webview.androidOnRenderProcessUnresponsive(this, url))
+              ?.toMap();
+        else if (_inAppBrowser != null)
+          return (await _inAppBrowser.androidOnRenderProcessUnresponsive(url))
+              ?.toMap();
+        break;
+      case "onRenderProcessResponsive":
+        String url = call.arguments["url"];
+        if (_webview != null &&
+            _webview.androidOnRenderProcessResponsive != null)
+          return (await _webview.androidOnRenderProcessResponsive(this, url))
+              ?.toMap();
+        else if (_inAppBrowser != null)
+          return (await _inAppBrowser.androidOnRenderProcessResponsive(url))
+              ?.toMap();
+        break;
+      case "onRenderProcessGone":
+        bool didCrash = call.arguments["didCrash"];
+        RendererPriority rendererPriorityAtExit = RendererPriority.fromValue(
+            call.arguments["rendererPriorityAtExit"]);
+        var detail = RenderProcessGoneDetail(
+            didCrash: didCrash, rendererPriorityAtExit: rendererPriorityAtExit);
+
+        if (_webview != null && _webview.androidOnRenderProcessGone != null)
+          _webview.androidOnRenderProcessGone(this, detail);
+        else if (_inAppBrowser != null)
+          _inAppBrowser.androidOnRenderProcessGone(detail);
+        break;
+      case "onFormResubmission":
+        String url = call.arguments["url"];
+        if (_webview != null && _webview.androidOnFormResubmission != null)
+          return (await _webview.androidOnFormResubmission(this, url))?.toMap();
+        else if (_inAppBrowser != null)
+          return (await _inAppBrowser.androidOnFormResubmission(url))?.toMap();
+        break;
+      case "onScaleChanged":
+        double oldScale = call.arguments["oldScale"];
+        double newScale = call.arguments["newScale"];
+        if (_webview != null && _webview.androidOnScaleChanged != null)
+          _webview.androidOnScaleChanged(this, oldScale, newScale);
+        else if (_inAppBrowser != null)
+          _inAppBrowser.androidOnScaleChanged(oldScale, newScale);
         break;
       case "onJsAlert":
         String message = call.arguments["message"];
@@ -244,9 +328,10 @@ class InAppWebViewController {
       case "onSafeBrowsingHit":
         String url = call.arguments["url"];
         SafeBrowsingThreat threatType =
-        SafeBrowsingThreat.fromValue(call.arguments["threatType"]);
+            SafeBrowsingThreat.fromValue(call.arguments["threatType"]);
         if (_webview != null && _webview.androidOnSafeBrowsingHit != null)
-          return (await _webview.androidOnSafeBrowsingHit(this, url, threatType))
+          return (await _webview.androidOnSafeBrowsingHit(
+                  this, url, threatType))
               ?.toMap();
         else if (_inAppBrowser != null)
           return (await _inAppBrowser.androidOnSafeBrowsingHit(url, threatType))
@@ -285,13 +370,14 @@ class InAppWebViewController {
             error: error,
             message: message,
             serverCertificate: serverCertificate);
-        if (_webview != null && _webview.onReceivedServerTrustAuthRequest != null)
+        if (_webview != null &&
+            _webview.onReceivedServerTrustAuthRequest != null)
           return (await _webview.onReceivedServerTrustAuthRequest(
-              this, challenge))
+                  this, challenge))
               ?.toMap();
         else if (_inAppBrowser != null)
           return (await _inAppBrowser
-              .onReceivedServerTrustAuthRequest(challenge))
+                  .onReceivedServerTrustAuthRequest(challenge))
               ?.toMap();
         break;
       case "onReceivedClientCertRequest":
@@ -325,11 +411,11 @@ class InAppWebViewController {
         List<String> resources = call.arguments["resources"].cast<String>();
         if (_webview != null && _webview.androidOnPermissionRequest != null)
           return (await _webview.androidOnPermissionRequest(
-              this, origin, resources))
+                  this, origin, resources))
               ?.toMap();
         else if (_inAppBrowser != null)
           return (await _inAppBrowser.androidOnPermissionRequest(
-              origin, resources))
+                  origin, resources))
               ?.toMap();
         break;
       case "onUpdateVisitedHistory":
@@ -347,10 +433,11 @@ class InAppWebViewController {
         else if (_inAppBrowser != null)
           _inAppBrowser.iosOnWebContentProcessDidTerminate();
         break;
-      case "onDidCommit":
-        if (_webview != null && _webview.iosOnDidCommit != null)
-          _webview.iosOnDidCommit(this);
-        else if (_inAppBrowser != null) _inAppBrowser.iosOnDidCommit();
+      case "onPageCommitVisible":
+        String url = call.arguments["url"];
+        if (_webview != null && _webview.onPageCommitVisible != null)
+          _webview.onPageCommitVisible(this, url);
+        else if (_inAppBrowser != null) _inAppBrowser.onPageCommitVisible(url);
         break;
       case "onDidReceiveServerRedirectForProvisionalNavigation":
         if (_webview != null &&
@@ -362,11 +449,13 @@ class InAppWebViewController {
         break;
       case "onLongPressHitTestResult":
         Map<dynamic, dynamic> hitTestResultMap =
-        call.arguments["hitTestResult"];
-        InAppWebViewHitTestResultType type = InAppWebViewHitTestResultType.fromValue(
-            hitTestResultMap["type"].toInt());
+            call.arguments["hitTestResult"];
+        InAppWebViewHitTestResultType type =
+            InAppWebViewHitTestResultType.fromValue(
+                hitTestResultMap["type"].toInt());
         String extra = hitTestResultMap["extra"];
-        InAppWebViewHitTestResult hitTestResult = InAppWebViewHitTestResult(type: type, extra: extra);
+        InAppWebViewHitTestResult hitTestResult =
+            InAppWebViewHitTestResult(type: type, extra: extra);
 
         if (_webview != null && _webview.onLongPressHitTestResult != null)
           _webview.onLongPressHitTestResult(this, hitTestResult);
@@ -383,11 +472,13 @@ class InAppWebViewController {
 
         if (contextMenu != null && contextMenu.onCreateContextMenu != null) {
           Map<dynamic, dynamic> hitTestResultMap =
-          call.arguments["hitTestResult"];
-          InAppWebViewHitTestResultType type = InAppWebViewHitTestResultType.fromValue(
-              hitTestResultMap["type"].toInt());
+              call.arguments["hitTestResult"];
+          InAppWebViewHitTestResultType type =
+              InAppWebViewHitTestResultType.fromValue(
+                  hitTestResultMap["type"].toInt());
           String extra = hitTestResultMap["extra"];
-          InAppWebViewHitTestResult hitTestResult = InAppWebViewHitTestResult(type: type, extra: extra);
+          InAppWebViewHitTestResult hitTestResult =
+              InAppWebViewHitTestResult(type: type, extra: extra);
 
           contextMenu.onCreateContextMenu(hitTestResult);
         }
@@ -417,7 +508,8 @@ class InAppWebViewController {
           String iosId = call.arguments["iosId"];
           String title = call.arguments["title"];
 
-          ContextMenuItem menuItemClicked = ContextMenuItem(androidId: androidId, iosId: iosId, title: title, action: null);
+          ContextMenuItem menuItemClicked = ContextMenuItem(
+              androidId: androidId, iosId: iosId, title: title, action: null);
 
           for (var menuItem in contextMenu.menuItems) {
             if ((Platform.isAndroid && menuItem.androidId == androidId) ||
@@ -434,18 +526,14 @@ class InAppWebViewController {
         }
         break;
       case "onEnterFullscreen":
-        if (_webview != null &&
-            _webview.onEnterFullscreen != null)
+        if (_webview != null && _webview.onEnterFullscreen != null)
           _webview.onEnterFullscreen(this);
-        else if (_inAppBrowser != null)
-          _inAppBrowser.onEnterFullscreen();
+        else if (_inAppBrowser != null) _inAppBrowser.onEnterFullscreen();
         break;
       case "onExitFullscreen":
-        if (_webview != null &&
-            _webview.onExitFullscreen != null)
+        if (_webview != null && _webview.onExitFullscreen != null)
           _webview.onExitFullscreen(this);
-        else if (_inAppBrowser != null)
-          _inAppBrowser.onExitFullscreen();
+        else if (_inAppBrowser != null) _inAppBrowser.onExitFullscreen();
         break;
       case "onCallJsHandler":
         String handlerName = call.arguments["handlerName"];
@@ -616,8 +704,7 @@ class InAppWebViewController {
             Uint8List body = Uint8List.fromList(argMap["body"].cast<int>());
             String mode = argMap["mode"];
             FetchRequestCredential credentials =
-            FetchRequest.createFetchRequestCredentialFromMap(
-                argMap["credentials"]);
+                FetchRequest.fromMap(argMap["credentials"]);
             String cache = argMap["cache"];
             String redirect = argMap["redirect"];
             String referrer = argMap["referrer"];
@@ -639,7 +726,8 @@ class InAppWebViewController {
                 integrity: integrity,
                 keepalive: keepalive);
 
-            if (_webview != null && _webview.shouldInterceptFetchRequest != null)
+            if (_webview != null &&
+                _webview.shouldInterceptFetchRequest != null)
               return jsonEncode(
                   await _webview.shouldInterceptFetchRequest(this, request));
             else if (_inAppBrowser != null)
@@ -670,19 +758,28 @@ class InAppWebViewController {
   }
 
   ///Gets the URL for the current page.
-  ///This is not always the same as the URL passed to [InAppWebView.onLoadStarted] because although the load for that URL has begun, the current page may not have changed.
+  ///This is not always the same as the URL passed to [WebView.onLoadStart] because although the load for that URL has begun, the current page may not have changed.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getUrl()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1415005-url
   Future<String> getUrl() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('getUrl', args);
   }
 
   ///Gets the title for the current page.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getTitle()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1415015-title
   Future<String> getTitle() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('getTitle', args);
   }
 
   ///Gets the progress for the current page. The progress value is between 0 and 100.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getProgress()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1415007-estimatedprogress
   Future<int> getProgress() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('getProgress', args);
@@ -713,7 +810,7 @@ class InAppWebViewController {
       try {
         var htmlRequest = await client.getUrl(url);
         html =
-        await (await htmlRequest.close()).transform(Utf8Decoder()).join();
+            await (await htmlRequest.close()).transform(Utf8Decoder()).join();
       } catch (e) {
         print(e);
       }
@@ -756,8 +853,8 @@ class InAppWebViewController {
             manifestUrl = manifestUrl.substring(1);
           }
           manifestUrl = ((assetPathBase == null)
-              ? url.scheme + "://" + url.host + "/"
-              : assetPathBase) +
+                  ? url.scheme + "://" + url.host + "/"
+                  : assetPathBase) +
               manifestUrl;
         }
         continue;
@@ -796,7 +893,7 @@ class InAppWebViewController {
 
     if (manifestFound) {
       Map<String, dynamic> manifest =
-      json.decode(await manifestResponse.transform(Utf8Decoder()).join());
+          json.decode(await manifestResponse.transform(Utf8Decoder()).join());
       if (manifest.containsKey("icons")) {
         for (Map<String, dynamic> icon in manifest["icons"]) {
           favicons.addAll(_createFavicons(url, assetPathBase, icon["src"],
@@ -822,16 +919,16 @@ class InAppWebViewController {
         urlIcon = urlIcon.substring(1);
       }
       urlIcon = ((assetPathBase == null)
-          ? url.scheme + "://" + url.host + "/"
-          : assetPathBase) +
+              ? url.scheme + "://" + url.host + "/"
+              : assetPathBase) +
           urlIcon;
     }
     if (isManifest) {
       rel = (sizes != null)
           ? urlSplitted[urlSplitted.length - 1]
-          .replaceFirst("-" + sizes, "")
-          .split(" ")[0]
-          .split(".")[0]
+              .replaceFirst("-" + sizes, "")
+              .split(" ")[0]
+              .split(".")[0]
           : null;
     }
     if (sizes != null && sizes.isNotEmpty && sizes != "any") {
@@ -850,6 +947,9 @@ class InAppWebViewController {
   }
 
   ///Loads the given [url] with optional [headers] specified as a map from name to value.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#loadUrl(java.lang.String)
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414954-load
   Future<void> loadUrl(
       {@required String url, Map<String, String> headers = const {}}) async {
     assert(url != null && url.isNotEmpty);
@@ -860,6 +960,8 @@ class InAppWebViewController {
   }
 
   ///Loads the given [url] with [postData] using `POST` method into this WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#postUrl(java.lang.String,%20byte[])
   Future<void> postUrl(
       {@required String url, @required Uint8List postData}) async {
     assert(url != null && url.isNotEmpty);
@@ -877,12 +979,17 @@ class InAppWebViewController {
   ///The [encoding] parameter specifies the encoding of the data. The default value is `"utf8"`.
   ///
   ///The [androidHistoryUrl] parameter is the URL to use as the history entry. The default value is `about:blank`. If non-null, this must be a valid URL. This parameter is used only on Android.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#loadDataWithBaseURL(java.lang.String,%20java.lang.String,%20java.lang.String,%20java.lang.String,%20java.lang.String)
+  ///**Official iOS API**:
+  ///- https://developer.apple.com/documentation/webkit/wkwebview/1415004-loadhtmlstring
+  ///- https://developer.apple.com/documentation/webkit/wkwebview/1415011-load
   Future<void> loadData(
       {@required String data,
-        String mimeType = "text/html",
-        String encoding = "utf8",
-        String baseUrl = "about:blank",
-        String androidHistoryUrl = "about:blank"}) async {
+      String mimeType = "text/html",
+      String encoding = "utf8",
+      String baseUrl = "about:blank",
+      String androidHistoryUrl = "about:blank"}) async {
     assert(data != null);
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('data', () => data);
@@ -924,7 +1031,7 @@ class InAppWebViewController {
   ///```
   Future<void> loadFile(
       {@required String assetFilePath,
-        Map<String, String> headers = const {}}) async {
+      Map<String, String> headers = const {}}) async {
     assert(assetFilePath != null && assetFilePath.isNotEmpty);
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('url', () => assetFilePath);
@@ -933,36 +1040,54 @@ class InAppWebViewController {
   }
 
   ///Reloads the WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#reload()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414969-reload
   Future<void> reload() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('reload', args);
   }
 
   ///Goes back in the history of the WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#goBack()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414952-goback
   Future<void> goBack() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('goBack', args);
   }
 
   ///Returns a boolean value indicating whether the WebView can move backward.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#canGoBack()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414966-cangoback
   Future<bool> canGoBack() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('canGoBack', args);
   }
 
   ///Goes forward in the history of the WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#goForward()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414993-goforward
   Future<void> goForward() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('goForward', args);
   }
 
   ///Returns a boolean value indicating whether the WebView can move forward.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#canGoForward()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414962-cangoforward
   Future<bool> canGoForward() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('canGoForward', args);
   }
 
   ///Goes to the history item that is the number of steps away from the current item. Steps is negative if backward and positive if forward.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#goBackOrForward(int)
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414991-go
   Future<void> goBackOrForward({@required int steps}) async {
     assert(steps != null);
 
@@ -972,6 +1097,8 @@ class InAppWebViewController {
   }
 
   ///Returns a boolean value indicating whether the WebView can go back or forward the given number of steps. Steps is negative if backward and positive if forward.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#canGoBackOrForward(int)
   Future<bool> canGoBackOrForward({@required int steps}) async {
     assert(steps != null);
 
@@ -992,12 +1119,18 @@ class InAppWebViewController {
   }
 
   ///Stops the WebView from loading.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#stopLoading()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414981-stoploading
   Future<void> stopLoading() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('stopLoading', args);
   }
 
   ///Evaluates JavaScript code into the WebView and returns the result of the evaluation.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#evaluateJavascript(java.lang.String,%20android.webkit.ValueCallback%3Cjava.lang.String%3E)
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1415017-evaluatejavascript
   Future<dynamic> evaluateJavascript({@required String source}) async {
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('source', () => source);
@@ -1088,7 +1221,7 @@ class InAppWebViewController {
   ///Forbidden names for JavaScript handlers are defined in [javaScriptHandlerForbiddenNames].
   void addJavaScriptHandler(
       {@required String handlerName,
-        @required JavaScriptHandlerCallback callback}) {
+      @required JavaScriptHandlerCallback callback}) {
     assert(!javaScriptHandlerForbiddenNames.contains(handlerName));
     this.javaScriptHandlersMap[handlerName] = (callback);
   }
@@ -1104,6 +1237,8 @@ class InAppWebViewController {
   ///Takes a screenshot (in PNG format) of the WebView's visible viewport and returns a `Uint8List`. Returns `null` if it wasn't be able to take it.
   ///
   ///**NOTE for iOS**: available from iOS 11.0+.
+  ///
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/2873260-takesnapshot
   Future<Uint8List> takeScreenshot() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('takeScreenshot', args);
@@ -1122,9 +1257,9 @@ class InAppWebViewController {
     Map<String, dynamic> args = <String, dynamic>{};
 
     InAppWebViewGroupOptions inAppWebViewGroupOptions =
-    InAppWebViewGroupOptions();
+        InAppWebViewGroupOptions();
     Map<dynamic, dynamic> options =
-    await _channel.invokeMethod('getOptions', args);
+        await _channel.invokeMethod('getOptions', args);
     if (options != null) {
       options = options.cast<String, dynamic>();
       inAppWebViewGroupOptions.crossPlatform =
@@ -1143,10 +1278,13 @@ class InAppWebViewController {
   ///This contains only a snapshot of the current state.
   ///Multiple calls to this method may return different objects.
   ///The object returned from this method will not be updated to reflect any new state.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#copyBackForwardList()
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414977-backforwardlist
   Future<WebHistory> getCopyBackForwardList() async {
     Map<String, dynamic> args = <String, dynamic>{};
     Map<dynamic, dynamic> result =
-    await _channel.invokeMethod('getCopyBackForwardList', args);
+        await _channel.invokeMethod('getCopyBackForwardList', args);
     result = result.cast<String, dynamic>();
 
     List<dynamic> historyListMap = result["history"];
@@ -1180,6 +1318,8 @@ class InAppWebViewController {
   ///**NOTE**: on Android, it finds all instances asynchronously. Successive calls to this will cancel any pending searches.
   ///
   ///**NOTE**: on iOS, this is implemented using CSS and Javascript.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#findAllAsync(java.lang.String)
   Future<void> findAllAsync({@required String find}) async {
     assert(find != null);
     Map<String, dynamic> args = <String, dynamic>{};
@@ -1192,6 +1332,8 @@ class InAppWebViewController {
   ///[forward] represents the direction to search.
   ///
   ///**NOTE**: on iOS, this is implemented using CSS and Javascript.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#findNext(boolean)
   Future<void> findNext({@required bool forward}) async {
     assert(forward != null);
     Map<String, dynamic> args = <String, dynamic>{};
@@ -1202,6 +1344,8 @@ class InAppWebViewController {
   ///Clears the highlighting surrounding text matches created by [findAllAsync()].
   ///
   ///**NOTE**: on iOS, this is implemented using CSS and Javascript.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#clearMatches()
   Future<void> clearMatches() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('clearMatches', args);
@@ -1224,6 +1368,9 @@ class InAppWebViewController {
   ///[x] represents the x position to scroll to.
   ///
   ///[y] represents the y position to scroll to.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/view/View#scrollTo(int,%20int)
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiscrollview/1619400-setcontentoffset
   Future<void> scrollTo({@required int x, @required int y}) async {
     assert(x != null && y != null);
     Map<String, dynamic> args = <String, dynamic>{};
@@ -1237,6 +1384,9 @@ class InAppWebViewController {
   ///[x] represents the amount of pixels to scroll by horizontally.
   ///
   ///[y] represents the amount of pixels to scroll by vertically.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/view/View#scrollBy(int,%20int)
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiscrollview/1619400-setcontentoffset
   Future<void> scrollBy({@required int x, @required int y}) async {
     assert(x != null && y != null);
     Map<String, dynamic> args = <String, dynamic>{};
@@ -1249,6 +1399,8 @@ class InAppWebViewController {
   ///This is a global requests, not restricted to just this WebView. This can be useful if the application has been paused.
   ///
   ///On iOS, it is restricted to just this WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#pauseTimers()
   Future<void> pauseTimers() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('pauseTimers', args);
@@ -1257,6 +1409,8 @@ class InAppWebViewController {
   ///On Android, it resumes all layout, parsing, and JavaScript timers for all WebViews. This will resume dispatching all timers.
   ///
   ///On iOS, it resumes all layout, parsing, and JavaScript timers to just this WebView.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#resumeTimers()
   Future<void> resumeTimers() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('resumeTimers', args);
@@ -1265,12 +1419,18 @@ class InAppWebViewController {
   ///Prints the current page.
   ///
   ///**NOTE**: available on Android 21+.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/print/PrintManager
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiprintinteractioncontroller
   Future<void> printCurrentPage() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _channel.invokeMethod('printCurrentPage', args);
   }
 
   ///Gets the height of the HTML content.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getContentHeight()
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiscrollview/1619399-contentsize
   Future<int> getContentHeight() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('getContentHeight', args);
@@ -1281,6 +1441,9 @@ class InAppWebViewController {
   ///[zoomFactor] represents the zoom factor to apply. On Android, the zoom factor will be clamped to the Webview's zoom limits and, also, this value must be in the range 0.01 to 100.0 inclusive.
   ///
   ///**NOTE**: available on Android 21+.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#zoomBy(float)
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiscrollview/1619412-setzoomscale
   Future<void> zoomBy(double zoomFactor) async {
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('zoomFactor', () => zoomFactor);
@@ -1288,6 +1451,11 @@ class InAppWebViewController {
   }
 
   ///Gets the current scale of this WebView.
+  ///
+  ///**Official Android API**:
+  ///- https://developer.android.com/reference/android/util/DisplayMetrics#density
+  ///- https://developer.android.com/reference/android/webkit/WebViewClient#onScaleChanged(android.webkit.WebView,%20float,%20float)
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiscrollview/1619419-zoomscale
   Future<double> getScale() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _channel.invokeMethod('getScale', args);
@@ -1305,16 +1473,39 @@ class InAppWebViewController {
   ///Gets the hit result for hitting an HTML elements.
   ///
   ///**NOTE**: On iOS it is implemented using JavaScript.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getHitTestResult()
   Future<InAppWebViewHitTestResult> getHitTestResult() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    var hitTestResultMap = await _channel.invokeMethod('getHitTestResult', args);
-    InAppWebViewHitTestResultType type = InAppWebViewHitTestResultType.fromValue(
-        hitTestResultMap["type"].toInt());
+    var hitTestResultMap =
+        await _channel.invokeMethod('getHitTestResult', args);
+    InAppWebViewHitTestResultType type =
+        InAppWebViewHitTestResultType.fromValue(
+            hitTestResultMap["type"].toInt());
     String extra = hitTestResultMap["extra"];
     return InAppWebViewHitTestResult(type: type, extra: extra);
   }
 
+  ///Clears the current focus. It will clear also, for example, the current text selection.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/view/ViewGroup#clearFocus()
+  ///**Official iOS API**: https://developer.apple.com/documentation/uikit/uiresponder/1621097-resignfirstresponder
+  Future<void> clearFocus() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await _channel.invokeMethod('clearFocus', args);
+  }
+
+  ///Sets or updates the WebView context menu to be used next time it will appear.
+  Future<void> setContextMenu(ContextMenu contextMenu) async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    args.putIfAbsent("contextMenu", () => contextMenu?.toMap());
+    await _channel.invokeMethod('setContextMenu', args);
+    _inAppBrowser?.contextMenu = contextMenu;
+  }
+
   ///Gets the default user agent.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebSettings#getDefaultUserAgent(android.content.Context)
   static Future<String> getDefaultUserAgent() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _staticChannel.invokeMethod('getDefaultUserAgent', args);
@@ -1338,9 +1529,142 @@ class AndroidInAppWebViewController {
   ///or [AndroidInAppWebViewOptions.safeBrowsingEnabled]. This prepares resources used for Safe Browsing.
   ///
   ///**NOTE**: available only on Android 27+.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#startSafeBrowsing(android.content.Context,%20android.webkit.ValueCallback%3Cjava.lang.Boolean%3E)
   Future<bool> startSafeBrowsing() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _controller._channel.invokeMethod('startSafeBrowsing', args);
+  }
+
+  ///Clears the SSL preferences table stored in response to proceeding with SSL certificate errors.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#clearSslPreferences()
+  Future<void> clearSslPreferences() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    await _controller._channel.invokeMethod('clearSslPreferences', args);
+  }
+
+  ///Does a best-effort attempt to pause any processing that can be paused safely, such as animations and geolocation. Note that this call does not pause JavaScript.
+  ///To pause JavaScript globally, use [pauseTimers()]. To resume WebView, call [resume()].
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#onPause()
+  Future<void> pause() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    await _controller._channel.invokeMethod('pause', args);
+  }
+
+  ///Resumes a WebView after a previous call to [pause()].
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#onResume()
+  Future<void> resume() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    await _controller._channel.invokeMethod('resume', args);
+  }
+
+  ///Gets the URL that was originally requested for the current page.
+  ///This is not always the same as the URL passed to [InAppWebView.onLoadStarted] because although the load for that URL has begun,
+  ///the current page may not have changed. Also, there may have been redirects resulting in a different URL to that originally requested.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#getOriginalUrl()
+  Future<String> getOriginalUrl() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await _controller._channel.invokeMethod('getOriginalUrl', args);
+  }
+
+  ///Scrolls the contents of this WebView down by half the page size.
+  ///Returns `true` if the page was scrolled.
+  ///
+  ///[bottom] `true` to jump to bottom of page.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#pageDown(boolean)
+  Future<bool> pageDown({@required bool bottom}) async {
+    assert(bottom != null);
+    Map<String, dynamic> args = <String, dynamic>{};
+    args.putIfAbsent("bottom", () => bottom);
+    return await _controller._channel.invokeMethod('pageDown', args);
+  }
+
+  ///Scrolls the contents of this WebView up by half the view size.
+  ///Returns `true` if the page was scrolled.
+  ///
+  ///[bottom] `true` to jump to the top of the page.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#pageUp(boolean)
+  Future<bool> pageUp({@required bool top}) async {
+    assert(top != null);
+    Map<String, dynamic> args = <String, dynamic>{};
+    args.putIfAbsent("top", () => top);
+    return await _controller._channel.invokeMethod('pageUp', args);
+  }
+
+  ///Saves the current WebView as a web archive.
+  ///Returns the filename under which the file was saved, or `null` if saving the file failed.
+  ///
+  ///[basename] the filename where the archive should be placed. This value cannot be `null`.
+  ///
+  ///[autoname] if `false`, takes basename to be a file.
+  ///If `true`, [basename] is assumed to be a directory in which a filename will be chosen according to the URL of the current page.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#saveWebArchive(java.lang.String,%20boolean,%20android.webkit.ValueCallback%3Cjava.lang.String%3E)
+  Future<String> saveWebArchive(
+      {@required String basename, @required bool autoname}) async {
+    assert(basename != null && autoname != null);
+    Map<String, dynamic> args = <String, dynamic>{};
+    args.putIfAbsent("basename", () => basename);
+    args.putIfAbsent("autoname", () => autoname);
+    return await _controller._channel.invokeMethod('saveWebArchive', args);
+  }
+
+  ///Performs zoom in in this WebView.
+  ///Returns `true` if zoom in succeeds, `false` if no zoom changes.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#zoomIn()
+  Future<bool> zoomIn() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await _controller._channel.invokeMethod('zoomIn', args);
+  }
+
+  ///Performs zoom out in this WebView.
+  ///Returns `true` if zoom out succeeds, `false` if no zoom changes.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#zoomOut()
+  Future<bool> zoomOut() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await _controller._channel.invokeMethod('zoomOut', args);
+  }
+
+  ///Clears the internal back/forward list.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#clearHistory()
+  Future<void> clearHistory() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await _controller._channel.invokeMethod('clearHistory', args);
+  }
+
+  ///Clears the client certificate preferences stored in response to proceeding/cancelling client cert requests.
+  ///Note that WebView automatically clears these preferences when the system keychain is updated.
+  ///The preferences are shared by all the WebViews that are created by the embedder application.
+  ///
+  ///**NOTE**: On iOS certificate-based credentials are never stored permanently.
+  ///
+  ///**NOTE**: available on Android 21+.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/android/webkit/WebView#clearClientCertPreferences(java.lang.Runnable)
+  static Future<void> clearClientCertPreferences() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    await InAppWebViewController._staticChannel
+        .invokeMethod('clearClientCertPreferences', args);
+  }
+
+  ///Returns a URL pointing to the privacy policy for Safe Browsing reporting. This value will never be `null`.
+  ///
+  ///**NOTE**: available only on Android 27+.
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/androidx/webkit/WebViewCompat#getSafeBrowsingPrivacyPolicyUrl()
+  static Future<String> getSafeBrowsingPrivacyPolicyUrl() async {
+    Map<String, dynamic> args = <String, dynamic>{};
+    return await InAppWebViewController._staticChannel
+        .invokeMethod('getSafeBrowsingPrivacyPolicyUrl', args);
   }
 
   ///Sets the list of hosts (domain names/IP addresses) that are exempt from SafeBrowsing checks. The list is global for all the WebViews.
@@ -1358,60 +1682,35 @@ class AndroidInAppWebViewController {
   ///[hosts] represents the list of hosts. This value must never be null.
   ///
   ///**NOTE**: available only on Android 27+.
-  Future<bool> setSafeBrowsingWhitelist({@required List<String> hosts}) async {
+  ///
+  ///**Official Android API**: https://developer.android.com/reference/androidx/webkit/WebViewCompat#getSafeBrowsingPrivacyPolicyUrl()
+  static Future<bool> setSafeBrowsingWhitelist(
+      {@required List<String> hosts}) async {
     assert(hosts != null);
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('hosts', () => hosts);
-    return await _controller._channel
+    return await InAppWebViewController._staticChannel
         .invokeMethod('setSafeBrowsingWhitelist', args);
   }
 
-  ///Returns a URL pointing to the privacy policy for Safe Browsing reporting. This value will never be `null`.
+  ///If WebView has already been loaded into the current process this method will return the package that was used to load it.
+  ///Otherwise, the package that would be used if the WebView was loaded right now will be returned;
+  ///this does not cause WebView to be loaded, so this information may become outdated at any time.
+  ///The WebView package changes either when the current WebView package is updated, disabled, or uninstalled.
+  ///It can also be changed through a Developer Setting. If the WebView package changes, any app process that
+  ///has loaded WebView will be killed.
+  ///The next time the app starts and loads WebView it will use the new WebView package instead.
   ///
-  ///**NOTE**: available only on Android 27+.
-  Future<String> getSafeBrowsingPrivacyPolicyUrl() async {
-    Map<String, dynamic> args = <String, dynamic>{};
-    return await _controller._channel
-        .invokeMethod('getSafeBrowsingPrivacyPolicyUrl', args);
-  }
-
-  ///Clears the SSL preferences table stored in response to proceeding with SSL certificate errors.
-  Future<void> clearSslPreferences() async {
-    Map<String, dynamic> args = <String, dynamic>{};
-    await _controller._channel.invokeMethod('clearSslPreferences', args);
-  }
-
-  ///Clears the client certificate preferences stored in response to proceeding/cancelling client cert requests.
-  ///Note that WebView automatically clears these preferences when the system keychain is updated.
-  ///The preferences are shared by all the WebViews that are created by the embedder application.
+  ///**NOTE**: available only on Android 26+.
   ///
-  ///**NOTE**: On iOS certificate-based credentials are never stored permanently.
-  ///
-  ///**NOTE**: available on Android 21+.
-  Future<void> clearClientCertPreferences() async {
+  ///**Official Android API**: https://developer.android.com/reference/androidx/webkit/WebViewCompat#getCurrentWebViewPackage(android.content.Context)
+  static Future<AndroidWebViewPackageInfo> getCurrentWebViewPackage() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    await _controller._channel.invokeMethod('clearClientCertPreferences', args);
-  }
-
-  ///Does a best-effort attempt to pause any processing that can be paused safely, such as animations and geolocation. Note that this call does not pause JavaScript.
-  ///To pause JavaScript globally, use [pauseTimers()]. To resume WebView, call [resume()].
-  Future<void> pause() async {
-    Map<String, dynamic> args = <String, dynamic>{};
-    await _controller._channel.invokeMethod('pause', args);
-  }
-
-  ///Resumes a WebView after a previous call to [pause()].
-  Future<void> resume() async {
-    Map<String, dynamic> args = <String, dynamic>{};
-    await _controller._channel.invokeMethod('resume', args);
-  }
-
-  ///Gets the URL that was originally requested for the current page.
-  ///This is not always the same as the URL passed to [InAppWebView.onLoadStarted] because although the load for that URL has begun,
-  ///the current page may not have changed. Also, there may have been redirects resulting in a different URL to that originally requested.
-  Future<String> getOriginalUrl() async {
-    Map<String, dynamic> args = <String, dynamic>{};
-    return await _controller._channel.invokeMethod('getOriginalUrl', args);
+    Map<String, dynamic> packageInfo = (await InAppWebViewController
+            ._staticChannel
+            .invokeMethod('getCurrentWebViewPackage', args))
+        ?.cast<String, dynamic>();
+    return AndroidWebViewPackageInfo.fromMap(packageInfo);
   }
 }
 
@@ -1424,12 +1723,16 @@ class IOSInAppWebViewController {
   }
 
   ///Reloads the current page, performing end-to-end revalidation using cache-validating conditionals if possible.
+  ///
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1414956-reloadfromorigin
   Future<void> reloadFromOrigin() async {
     Map<String, dynamic> args = <String, dynamic>{};
     await _controller._channel.invokeMethod('reloadFromOrigin', args);
   }
 
   ///A Boolean value indicating whether all resources on the page have been loaded over securely encrypted connections.
+  ///
+  ///**Official iOS API**: https://developer.apple.com/documentation/webkit/wkwebview/1415002-hasonlysecurecontent
   Future<bool> hasOnlySecureContent() async {
     Map<String, dynamic> args = <String, dynamic>{};
     return await _controller._channel
