@@ -422,7 +422,7 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
     searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
     searchView.setFocusable(true);
 
-    if (options.hideUrlBar)
+    if (options == null || options.hideUrlBar)
       menu.findItem(R.id.menu_search).setVisible(false);
 
     searchView.setQuery(webView.getUrl(), false);
