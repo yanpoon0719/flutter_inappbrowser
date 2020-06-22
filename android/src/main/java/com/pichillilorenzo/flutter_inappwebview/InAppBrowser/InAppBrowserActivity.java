@@ -425,7 +425,8 @@ public class InAppBrowserActivity extends AppCompatActivity implements MethodCha
     if (options == null || options.hideUrlBar)
       menu.findItem(R.id.menu_search).setVisible(false);
 
-    searchView.setQuery(webView.getUrl(), false);
+    if (webView != null)
+      searchView.setQuery(webView.getUrl(), false);
 
     // if (options.toolbarTopFixedTitle.isEmpty())
     //   actionBar.setTitle(webView.getTitle());
