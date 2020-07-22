@@ -260,6 +260,8 @@ public class InAppWebViewClient extends WebViewClient {
   public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
     super.onReceivedError(view, errorCode, description, failingUrl);
 
+    view.loadUrl("about:blank");
+
     ((inAppBrowserActivity != null) ? inAppBrowserActivity.webView : flutterWebView.webView).isLoading = false;
     previousAuthRequestFailureCount = 0;
     credentialsProposed = null;
